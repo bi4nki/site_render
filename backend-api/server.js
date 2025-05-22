@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import masterDataRoutes from './routes/masterDataRoutes.js';
-// import optimizationRoutes from './routes/optimizationRoutes.js'; // Descomente quando criar
+import optimizationRoutes from './routes/optimizationRoutes.js'; // <--- ADICIONE ESTA LINHA
 
 dotenv.config();
 
@@ -10,9 +10,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
-app.use(cors()); // Configurar CORS adequadamente para produção depois
-app.use(express.json()); // Para parsear JSON no corpo das requisições
-app.use(express.urlencoded({ extended: true })); // Para parsear dados de formulário URL-encoded
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Rotas
 app.get('/api/health', (req, res) => {
@@ -20,7 +20,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/master-data', masterDataRoutes);
-// app.use('/api/process', optimizationRoutes); // Descomente quando criar
+app.use('/api/process', optimizationRoutes); // <--- ADICIONE ESTA LINHA (ou /api/optimize se preferir)
 
 // Error Handling Middleware (simples)
 app.use((err, req, res, next) => {
