@@ -1,12 +1,10 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet'; // Importar L para ícones personalizados se necessário
+import L, { LatLngExpression } from 'leaflet'; // <--- IMPORTAR LatLngExpression
 
-// Corrigir problema com ícone padrão do Leaflet no Next.js/Webpack
-// (Você pode precisar ajustar os caminhos se seus assets estiverem em outro lugar ou usar um CDN)
-// Esta é uma correção comum, mas pode precisar de ajustes dependendo da sua configuração de assets
+// ... (código de correção do ícone como antes) ...
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -14,24 +12,22 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-
 export interface MapMarkerData {
   id: number | string;
   latitude: number;
   longitude: number;
-  name: string; // Nome para aparecer no Popup
-  type: 'hospital' | 'airport' | 'other'; // Para diferenciar marcadores
-  details?: string; // Detalhes adicionais para o Popup
+  name: string;
+  type: 'hospital' | 'airport' | 'other';
+  details?: string;
 }
 
 interface InteractiveMapProps {
   markers: MapMarkerData[];
-  center?: [number, number]; // [latitude, longitude]
+  center?: LatLngExpression; // <--- USAR LatLngExpression AQUI
   zoom?: number;
   style?: React.CSSProperties;
 }
 
-// Cores para diferentes tipos de marcadores
 const markerColors = {
   hospital: 'blue',
   airport: 'red',
@@ -40,14 +36,17 @@ const markerColors = {
 
 export default function InteractiveMap({
   markers,
-  center = [-15.788497, -47.879873], // Ponto central do Brasil (aproximado)
-  zoom = 4, // Zoom para ver o Brasil
+  center = [-15.788497, -47.879873] as LatLngExpression, // <--- CAST PARA LatLngExpression NO DEFAULT
+  zoom = 4,
   style = { height: '500px', width: '100%' }
 }: InteractiveMapProps) {
-  // Garantir que o componente só renderize no cliente
+  
   if (typeof window === 'undefined') {
     return null; 
   }
+
+  // Certifique-se de que 'center' é realmente do tipo LatLngExpression
+  // O cast no default value e na prop type deve ser suficiente.
 
   return (
     <MapContainer center={center} zoom={zoom} scrollWheelZoom={true} style={style}>
@@ -56,12 +55,11 @@ export default function InteractiveMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {markers.map((marker) => (
-        // Usar CircleMarker para poder colorir facilmente
         <CircleMarker
           key={marker.id}
-          center={[marker.latitude, marker.longitude]}
+          center={[marker.latitude, marker.longitude] as LatLngExpression} // <--- CAST AQUI TAMBÉM
           pathOptions={{ color: markerColors[marker.type] || 'purple', fillColor: markerColors[marker.type] || 'purple', fillOpacity: 0.7 }}
-          radius={8} // Tamanho do círculo
+          radius={8}
         >
           <Popup>
             <strong>{marker.name}</strong><br />
