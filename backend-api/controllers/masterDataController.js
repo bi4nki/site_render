@@ -69,7 +69,6 @@ export const getHospitals = async (req, res) => {
 export const deleteHospital = async (req, res) => {
     const { id } = req.params;
     try {
-        // Tentativa de deletar o hospital. Se falhar devido a FK, o catch lidará.
         const hospital = await prisma.hospital.delete({
             where: { id: parseInt(id) },
         });
@@ -95,14 +94,12 @@ export const deleteHospital = async (req, res) => {
 export const deleteAirport = async (req, res) => {
     const { id } = req.params;
     try {
-        // Aeroportos geralmente não são referenciados por outras tabelas no seu schema atual,
-        // então a deleção direta deve ser segura. Se fossem, você adicionaria checagens aqui.
         const airport = await prisma.airport.delete({
             where: { id: parseInt(id) },
         });
         res.status(200).json({ message: `Aeroporto com id ${id} deletado com sucesso.`, airport });
     } catch (error) {
-        if (error.code === 'P2025') { // Record to delete does not exist.
+        if (error.code === 'P2025') { 
             return res.status(404).json({ error: `Aeroporto com id ${id} não encontrado.` });
         }
         console.error("Erro ao deletar aeroporto:", error.message);
@@ -172,11 +169,9 @@ export const getDonors = async (req, res) => {
     }
 };
 
-// NOVA FUNÇÃO PARA DELETAR DOADOR
 export const deleteDonor = async (req, res) => {
     const { id } = req.params;
     try {
-        // Antes de deletar um doador, verificar se ele está em algum TransportLog
         const relatedLogs = await prisma.transportLog.count({
             where: { donorId: parseInt(id) }
         });
@@ -273,7 +268,6 @@ export const deleteAllTransportLogs = async (req, res) => {
 export const deleteReceiver = async (req, res) => {
     const { id } = req.params;
     try {
-        // Antes de deletar um receptor, verificar se ele está em algum TransportLog
         const relatedLogs = await prisma.transportLog.count({
             where: { receiverId: parseInt(id) }
         });
