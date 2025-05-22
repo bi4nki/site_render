@@ -16,11 +16,13 @@
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0", 
     "typescript": "^5.4.5",
-    "leaflet": "^1.9.4",  // Verifique a versão mais recente
-"react-leaflet": "^4.2.1" // Verifique a versão mais recente
+    "leaflet": "^1.9.4", 
+"react-leaflet": "^4.2.1"
   },
   "devDependencies": {
     "eslint": "^8",
-    "eslint-config-next": "14.2.3"
+    "eslint-config-next": "14.2.3",
+    "@types/leaflet": "^1.9.8", 
+"@types/react-leaflet": "^3.0.0"
   }
 }
