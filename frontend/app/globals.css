@@ -2,13 +2,3 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Seus estilos globais existentes ou personalizados podem vir abaixo */
-/* Por exemplo, se você já tinha body styles aqui, eles podem permanecer ou ser substituídos por classes Tailwind no layout */
-/* body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-} */
