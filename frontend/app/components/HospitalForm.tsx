@@ -26,6 +26,18 @@ export default function HospitalForm({
   isSubmitting,
   submitButtonText = "Salvar Hospital"
 }: HospitalFormProps) {
+  
+  // Lógica para inicializar transplantTypes corretamente
+  let initialTransplantTypesString = '';
+  if (initialData?.transplantTypes) {
+    if (Array.isArray(initialData.transplantTypes)) {
+      initialTransplantTypesString = (initialData.transplantTypes as string[]).join(', ');
+    } else {
+      // Se já for string (ou outro tipo que não array), usa diretamente
+      initialTransplantTypesString = initialData.transplantTypes;
+    }
+  }
+
   const [formData, setFormData] = useState<HospitalFormData>({
     name: '',
     address: '',
@@ -33,12 +45,9 @@ export default function HospitalForm({
     state: '',
     latitude: '',
     longitude: '',
-    transplantTypes: '',
-    ...initialData, // Preenche se initialData for fornecido (para edição)
-    // Se initialData.transplantTypes for array, converte para string
-    transplantTypes: initialData?.transplantTypes && Array.isArray(initialData.transplantTypes)
-                        ? (initialData.transplantTypes as string[]).join(', ')
-                        : initialData?.transplantTypes || ''
+    // ... Espalha initialData, MAS sobrescreve transplantTypes logo abaixo
+    ...initialData, 
+    transplantTypes: initialTransplantTypesString, // Define transplantTypes UMA VEZ aqui
   });
 
   const router = useRouter();
@@ -53,8 +62,10 @@ export default function HospitalForm({
     await onSubmit(formData);
   };
 
+  // ... (resto do JSX do formulário como antes) ...
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '500px' }}>
+      {/* ... campos do formulário ... */}
       <div>
         <label htmlFor="name">Nome do Hospital:</label>
         <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required style={{ width: '100%', padding: '8px' }} />
