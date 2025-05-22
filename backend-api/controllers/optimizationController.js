@@ -1,17 +1,17 @@
 import { PrismaClient } from '@prisma/client';
-import axios from 'axios';
+import axios from 'axios'; // Para fazer chamadas HTTP para o ml-service
 
 const prisma = new PrismaClient();
 
-// Nomes e ordem das 6 features como o ml-service (V_ATUAL, ex: V4 ou V5) espera
-const ML_EXPECTED_FEATURE_NAMES = [ 
+// Nomes e ordem das 6 features como o ml-service V_MAIS_RECENTE (ex: V4 ou V5) espera
+const ML_EXPECTED_FEATURE_NAMES = [ // Garanta que esta lista corresponde ao seu modelo treinado
     "distancia_km", "tempo_isquemia_max_horas", "urgencia_receptor",
     "disponibilidade_voo_comercial_bool",
     "horario_compativel_voo_comercial_bool",
     "disponibilidade_voo_dedicado_bool"
 ];
 
-// --- Constantes para Estimativa de Tempo (horas) do Backend (Conforme sua solicitação) ---
+// --- Constantes para Estimativa de Tempo (horas) do Backend ---
 const VELOCIDADE_TERRESTRE_KMH_BACKEND = 80;
 const VELOCIDADE_AEREO_COMERCIAL_KMH_BACKEND = 800;
 const VELOCIDADE_AEREO_DEDICADO_KMH_BACKEND = 700;
@@ -30,9 +30,9 @@ function deg2rad(deg) {
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     if (typeof lat1 !== 'number' || typeof lon1 !== 'number' || typeof lat2 !== 'number' || typeof lon2 !== 'number') {
         console.error("Coordenadas inválidas para cálculo de distância:", lat1, lon1, lat2, lon2);
-        return 0; 
+        return 0; // Retorna 0 ou lança um erro, dependendo de como quer tratar
     }
-    const R = 6371; 
+    const R = 6371; // Raio da Terra em km
     const dLat = deg2rad(lat2 - lat1);
     const dLon = deg2rad(lon2 - lon1);
     const a =
@@ -44,48 +44,56 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     return parseFloat(d.toFixed(1));
 }
 
-function randomUniform(min, max) {
+function randomUniform(min, max) { // Função para simular Python random.uniform
     return Math.random() * (max - min) + min;
 }
 
+/**
+ * Verifica a compatibilidade básica do tipo sanguíneo ABO.
+ * Ignora o fator Rh para simplificação inicial em transplante de órgãos.
+ */
 function checkABOCompatibility(donorBloodType, receiverBloodType) {
-    if (!donorBloodType || !receiverBloodType) return false;
+    if (!donorBloodType || !receiverBloodType) return false; // Precisa de ambos os tipos
+
     const donorABO = donorBloodType.replace(/[+-]$/, '').toUpperCase();
     const receiverABO = receiverBloodType.replace(/[+-]$/, '').toUpperCase();
+
     console.log(`Backend: Checando compatibilidade ABO: Doador ${donorABO} -> Receptor ${receiverABO}`);
+
     if (donorABO === "O") return true;
     if (donorABO === "A" && (receiverABO === "A" || receiverABO === "AB")) return true;
     if (donorABO === "B" && (receiverABO === "B" || receiverABO === "AB")) return true;
     if (donorABO === "AB" && receiverABO === "AB") return true;
+    
     return false;
 }
 
 function calcularTempoEstimadoViagemBackend(distanciaKmOuDistanciaVoo, modal, disponibilidadeBool, tempoIsquemiaMaxHoras) {
-    if (modal !== 0 && !disponibilidadeBool) { 
+    if (modal !== 0 && !disponibilidadeBool) { // Se não for terrestre e não estiver disponível
         let motivoIndisponibilidade = "Indisponível (simulado).";
-        if (modal === 1) { // Se for aéreo comercial, e a flag geral de disponibilidade é true, mas a de horário não, então é por horário
-             // Esta função agora recebe a disponibilidade FINAL do modal, então a mensagem pode ser genérica.
-             // A lógica de "fora do horário" é melhor tratada ANTES de chamar esta função, ao construir transportOptions.
+        if (modal === 1 && disponibilidadeBool === 0.0 /*&& horario era o problema, mas essa info não chega aqui*/) {
+            // A lógica de horário já foi considerada em disponibilidadeBool para Aéreo Comercial
+            // Esta função recebe a disponibilidade FINAL para o cálculo de tempo.
         }
         return { tempoHoras: null, detalhes: motivoIndisponibilidade, risco: "N/A", isViableIschemia: false };
     }
 
     let tempoViagemHoras;
     let detalhes = "";
-    let risco = "Baixo"; 
+    let risco = "Baixo"; // Default
 
     switch (modal) {
-        case 0: 
+        case 0: // Terrestre
             tempoViagemHoras = distanciaKmOuDistanciaVoo / VELOCIDADE_TERRESTRE_KMH_BACKEND;
             detalhes = `Distância: ${distanciaKmOuDistanciaVoo.toFixed(1)}km. Velocidade média: ${VELOCIDADE_TERRESTRE_KMH_BACKEND}km/h.`;
             break;
-        case 1: 
+        case 1: // Aéreo Comercial
             const tempoVooComercial = distanciaKmOuDistanciaVoo / VELOCIDADE_AEREO_COMERCIAL_KMH_BACKEND;
             tempoViagemHoras = TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND + TEMPO_SOLO_AEROPORTOS_COMERCIAL_HORAS_BACKEND + tempoVooComercial;
             detalhes = `Desloc. terrestre aeroportos (total): ${TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND.toFixed(1)}h. Tempo solo aeroportos (total): ${TEMPO_SOLO_AEROPORTOS_COMERCIAL_HORAS_BACKEND.toFixed(1)}h. Voo (${distanciaKmOuDistanciaVoo.toFixed(1)}km @ ${VELOCIDADE_AEREO_COMERCIAL_KMH_BACKEND}km/h): ${tempoVooComercial.toFixed(2)}h.`;
             break;
-        case 2: 
-            const tempoVooDedicado = distanciaKmOuDistanciaVoo / VELOCIDADE_AEREO_DEDICADO_KMH_BACKEND;
+        case 2: // Aéreo Dedicado
+            const tempoVooDedicado = distanciaKmOuDistanciaVoo / VELOCidade_AEREO_DEDICADO_KMH_BACKEND;
             tempoViagemHoras = TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND + TEMPO_SOLO_AEROPORTOS_DEDICADO_HORAS_BACKEND + tempoVooDedicado;
             detalhes = `Desloc. terrestre aeroportos (total): ${TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND.toFixed(1)}h. Tempo solo aeroportos (total): ${TEMPO_SOLO_AEROPORTOS_DEDICADO_HORAS_BACKEND.toFixed(1)}h. Voo (${distanciaKmOuDistanciaVoo.toFixed(1)}km @ ${VELOCIDADE_AEREO_DEDICADO_KMH_BACKEND}km/h): ${tempoVooDedicado.toFixed(2)}h.`;
             break;
@@ -137,16 +145,26 @@ export const optimizeTransport = async (req, res) => {
         if (!donor.hospital) return res.status(404).json({ error: `Hospital para o doador ${donorId} não encontrado.` });
         if (!receiver.hospital) return res.status(404).json({ error: `Hospital para o receptor ${receiverId} não encontrado.` });
 
+        // Validação de Tipo de Órgão
         if (donor.organ.id !== receiver.organNeeded.id) {
             console.log(`Backend: Incompatibilidade de Órgão: Doador (${donor.organ.name}) vs Receptor (${receiver.organNeeded.name})`);
-            return res.status(400).json({ error: 'Incompatibilidade de Órgão.', message: `O doador oferece um ${donor.organ.name}, mas o receptor precisa de um ${receiver.organNeeded.name}.`});
+            return res.status(400).json({ 
+                error: 'Incompatibilidade de Órgão.',
+                message: `O doador oferece um ${donor.organ.name}, mas o receptor precisa de um ${receiver.organNeeded.name}.`
+            });
         }
+
+        // Validação de Tipo Sanguíneo ABO
         if (!donor.bloodType || !receiver.bloodType) {
             return res.status(400).json({ error: 'Tipo sanguíneo do doador ou receptor não informado no banco de dados.' });
         }
-        if (!checkABOCompatibility(donor.bloodType, receiver.bloodType)) {
+        const isCompatibleABO = checkABOCompatibility(donor.bloodType, receiver.bloodType);
+        if (!isCompatibleABO) {
             console.log(`Backend: Incompatibilidade Sanguínea ABO: Doador (${donor.bloodType}) -> Receptor (${receiver.bloodType})`);
-            return res.status(400).json({ error: 'Incompatibilidade Sanguínea (ABO).', message: `Tipo sanguíneo do doador (${donor.bloodType}) não é compatível com o do receptor (${receiver.bloodType}).`});
+            return res.status(400).json({ 
+                error: 'Incompatibilidade Sanguínea (ABO).',
+                message: `Tipo sanguíneo do doador (${donor.bloodType}) não é compatível com o do receptor (${receiver.bloodType}).`
+            });
         }
         console.log(`Backend: Compatibilidade Sanguínea ABO: Doador (${donor.bloodType}) -> Receptor (${receiver.bloodType}) = OK`);
         
@@ -175,19 +193,23 @@ export const optimizeTransport = async (req, res) => {
             }
         }
         
-        // --- LÓGICA DE DISPONIBILIDADE DE VOO DEDICADO ATUALIZADA (Opção 2 anterior) ---
         let disponibilidade_voo_dedicado_bool_feat = 0.0;
-        if (distancia_km_ponta_a_ponta > 1000) { 
+        let chanceBaseDedicado = 0.3; 
+        if (distancia_km_ponta_a_ponta > 1000) chanceBaseDedicado += 0.2; 
+        if (distancia_km_ponta_a_ponta > 2000) chanceBaseDedicado += 0.2; 
+        if (urgencia_receptor <= 2) chanceBaseDedicado += 0.2;        
+        if (tempo_isquemia_max_horas <= 8) chanceBaseDedicado += 0.15; 
+        chanceBaseDedicado = Math.min(chanceBaseDedicado, 0.90); 
+        if (Math.random() < chanceBaseDedicado) {
             disponibilidade_voo_dedicado_bool_feat = 1.0;
-        } else if (urgencia_receptor <= 2 && distancia_km_ponta_a_ponta > 200) { 
-            disponibilidade_voo_dedicado_bool_feat = 1.0;
-        } else if (tempo_isquemia_max_horas <= 6 && distancia_km_ponta_a_ponta > 200) { 
-            disponibilidade_voo_dedicado_bool_feat = 1.0;
-        } else if (distancia_km_ponta_a_ponta > 300 && Math.random() < 0.4) { 
-             disponibilidade_voo_dedicado_bool_feat = 1.0;
         }
-        // --- FIM DA LÓGICA ATUALIZADA ---
-
+        if (disponibilidade_voo_dedicado_bool_feat === 0.0 && distancia_km_ponta_a_ponta > 100) {
+            if (urgencia_receptor === 1 || tempo_isquemia_max_horas <= 4) { 
+                if (Math.random() < 0.8) { 
+                    disponibilidade_voo_dedicado_bool_feat = 1.0;
+                }
+            }
+        }
         console.log("Backend: Feature de disponibilidade_voo_dedicado_bool_feat (para ML):", disponibilidade_voo_dedicado_bool_feat);
 
         const feature_values_for_ml = [
@@ -199,7 +221,7 @@ export const optimizeTransport = async (req, res) => {
             disponibilidade_voo_dedicado_bool_feat
         ];
         
-        console.log("Backend: Features enviadas para o ML (V_ATUAL):", feature_values_for_ml);
+        console.log("Backend: Features enviadas para o ML (V4/V5):", feature_values_for_ml);
 
         if (!process.env.ML_SERVICE_URL) {
             console.error("ERRO: ML_SERVICE_URL não está definida.");
@@ -213,7 +235,7 @@ export const optimizeTransport = async (req, res) => {
                 { features: feature_values_for_ml }
             );
             mlPrediction = mlServiceResponse.data;
-            console.log("Backend: Resposta do ML Service (V_ATUAL):", mlPrediction);
+            console.log("Backend: Resposta do ML Service (V4/V5):", mlPrediction);
         } catch (mlError) {
             console.error("Erro ao chamar o ML Service:", mlError.message);
             if (mlError.response) {
@@ -233,7 +255,6 @@ export const optimizeTransport = async (req, res) => {
         const transportOptions = [];
         let algumaOpcaoViavelEncontrada = false;
 
-        // Terrestre
         const terrestreCalc = calcularTempoEstimadoViagemBackend(distancia_km_ponta_a_ponta, 0, 1.0, tempo_isquemia_max_horas);
         transportOptions.push({
             mode: "Terrestre",
@@ -245,7 +266,6 @@ export const optimizeTransport = async (req, res) => {
         });
         if (terrestreCalc.isViableIschemia) algumaOpcaoViavelEncontrada = true;
 
-        // Aéreo Comercial
         const dispRealComercialParaCalculoTempo = disponibilidade_voo_comercial_bool_feat === 1.0 && horario_compativel_voo_comercial_bool_feat === 1.0;
         const aereoComercialCalc = calcularTempoEstimadoViagemBackend(distancia_km_ponta_a_ponta, 1, dispRealComercialParaCalculoTempo, tempo_isquemia_max_horas);
         if (aereoComercialCalc.tempoHoras !== null) {
@@ -266,7 +286,6 @@ export const optimizeTransport = async (req, res) => {
             transportOptions.push({ mode: "Aereo Comercial", details: detailMsg, riskLevel: "N/A", isViableIschemia: false, isRecommendedByML: false });
         }
         
-        // Aéreo Dedicado
         console.log("Backend: Valor de disponibilidade_voo_dedicado_bool_feat (para cálculo de tempo):", disponibilidade_voo_dedicado_bool_feat);
         const aereoDedicadoCalc = calcularTempoEstimadoViagemBackend(distancia_km_ponta_a_ponta, 2, disponibilidade_voo_dedicado_bool_feat, tempo_isquemia_max_horas);
          if (aereoDedicadoCalc.tempoHoras !== null) {
@@ -290,8 +309,8 @@ export const optimizeTransport = async (req, res) => {
             const recomendacaoMLOpcao = transportOptions.find(opt => opt.isRecommendedByML);
             if (recomendacaoMLOpcao) {
                 overallRiskAssessment = `Recomendação do ML (${recomendacaoMLOpcao.mode}) tem risco: ${recomendacaoMLOpcao.riskLevel}.`;
-                if (recomendacaoMLOpcao.tempoHoras === null || !recomendacaoMLOpcao.isViableIschemia) { // Checa se tempoHoras é null também
-                     overallRiskAssessment += " ATENÇÃO: Recomendação do ML pode não ser viável ou excede o tempo de isquemia!";
+                if (!recomendacaoMLOpcao.isViableIschemia) {
+                     overallRiskAssessment += " ATENÇÃO: Recomendação do ML excede o tempo de isquemia!";
                 }
             }
         }
@@ -299,15 +318,14 @@ export const optimizeTransport = async (req, res) => {
         const logNotes = `ML: ${mlPrediction.predicted_transport_mode}. Risk: ${overallRiskAssessment}. ABO: YES. Organ: YES. Probs: ${JSON.stringify(mlPrediction.probabilities)}. Features: ${JSON.stringify(feature_values_for_ml)}. Options: ${JSON.stringify(transportOptions)}`;
         let transportLogEntry;
         try {
-            const recommendedOption = transportOptions.find(opt => opt.isRecommendedByML && opt.estimatedTimeHours !== null);
             transportLogEntry = await prisma.transportLog.create({
                 data: {
                     donorId: parseInt(donorId),
                     receiverId: parseInt(receiverId),
                     selectedTransportMode: mlPrediction.predicted_transport_mode || "N/A",
-                    estimatedTimeHours: recommendedOption ? recommendedOption.estimatedTimeHours : 0,
+                    estimatedTimeHours: transportOptions.find(opt => opt.isRecommendedByML && opt.estimatedTimeHours !== null)?.estimatedTimeHours || 0,
                     status: "PENDING_CONFIRMATION",
-                    notes: logNotes.substring(0, 1900), // Limita o tamanho da nota
+                    notes: logNotes.substring(0, 1900),
                 },
             });
             console.log("Backend: Log de transporte salvo:", transportLogEntry);
