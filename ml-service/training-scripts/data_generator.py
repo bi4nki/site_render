@@ -11,7 +11,7 @@ OUTPUT_CSV_PATH = "synthetic_transport_data.csv"
 VELOCIDADE_TERRESTRE_KMH = 70
 
 # Aéreo - Tempos de Voo
-VELOCIDADE_AEREO_COMERCIAL_KMH = 7h no destino para dedicado
+VELOCIDADE_AEREO_COMERCIAL_KMH = 750 
 
 # Modais: 0 (Terrestre), 1 (Aéreo Comercial), 2 (Aéreo Dedicado)
 
