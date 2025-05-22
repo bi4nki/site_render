@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L, { LatLngExpression, MapOptions } from 'leaflet';
 
-// ... (código de correção do ícone como antes) ...
+// Código de correção do ícone padrão do Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -12,7 +12,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// ... (interfaces MapMarkerData, InteractiveMapProps como na Tentativa 3) ...
 export interface MapMarkerData {
   id: number | string;
   latitude: number;
@@ -36,7 +35,6 @@ const markerColors = {
   other: 'green',
 };
 
-
 export default function InteractiveMap({
   markers,
   center = [-15.788497, -47.879873] as LatLngExpression,
@@ -57,13 +55,11 @@ export default function InteractiveMap({
 
   return (
     <MapContainer {...mapOptions} style={style}>
-      {/* @ts-ignore TS2322: Type '{ attribution: string; url: string; }' is not assignable to type 'IntrinsicAttributes & TileLayerProps...'. Property 'attribution' does not exist... */}
       <TileLayer
-        attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution="Test Attribution String" // MODIFICADO PARA TESTE: String simples
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {/* ... (resto do map para markers) ... */}
-       {markers.map((marker) => (
+      {markers.map((marker) => (
         <CircleMarker
           key={marker.id}
           center={[marker.latitude, marker.longitude] as LatLngExpression}
