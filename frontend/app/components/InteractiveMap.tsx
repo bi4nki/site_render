@@ -47,6 +47,7 @@ export default function InteractiveMap({
     return null; 
   }
 
+  // Usar MapOptions para as props principais do MapContainer
   const mapOptions: MapOptions = {
     center: center,
     zoom: zoom,
@@ -55,6 +56,8 @@ export default function InteractiveMap({
 
   return (
     <MapContainer {...mapOptions} style={style}>
+      {/* Adicionando @ts-expect-error para a prop attribution do TileLayer */}
+      {/* @ts-expect-error TS2322: Property 'attribution' does not exist on type 'IntrinsicAttributes & TileLayerProps...'. */}
       <TileLayer
         attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -64,12 +67,11 @@ export default function InteractiveMap({
           key={marker.id}
           center={[marker.latitude, marker.longitude] as LatLngExpression}
           pathOptions={{ 
-            color: markerColors[marker.type] || 'purple',      // Cor da borda do círculo
-            fillColor: markerColors[marker.type] || 'purple',  // Cor do preenchimento
-            fillOpacity: 0.7,                                  // Opacidade do preenchimento
-            radius: 8                                          // Raio do círculo em pixels (MOVIDO PARA CÁ)
+            color: markerColors[marker.type] || 'purple',
+            fillColor: markerColors[marker.type] || 'purple',
+            fillOpacity: 0.7,
+            radius: 8 // radius DENTRO de pathOptions
           }}
-          // radius={8} // REMOVIDO DAQUI
         >
           <Popup>
             <strong>{marker.name}</strong><br />
