@@ -1,11 +1,11 @@
 import express from 'express';
 import {
   createOrgan, getOrgans,
-  createHospital, getHospitals,
+  createHospital, getHospitals, deleteHospital, // Adicionado deleteHospital
   createAirport, getAirports,
   createDonor, getDonors,
   createReceiver, getReceivers
-} from '../controllers/masterDataController.js'; // Ajustaremos o path se necessário
+} from '../controllers/masterDataController.js';
 
 const router = express.Router();
 
@@ -16,6 +16,7 @@ router.get('/organs', getOrgans);
 // Hospitais
 router.post('/hospitals', createHospital);
 router.get('/hospitals', getHospitals);
+router.delete('/hospitals/:id', deleteHospital); // NOVA ROTA DELETE
 
 // Aeroportos
 router.post('/airports', createAirport);
