@@ -91,7 +91,25 @@ export const deleteHospital = async (req, res) => {
 };
 
 // --- AEROPORTOS ---
-// (Mantido como antes, sem delete por enquanto para focar)
+
+export const deleteAirport = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Aeroportos geralmente não são referenciados por outras tabelas no seu schema atual,
+        // então a deleção direta deve ser segura. Se fossem, você adicionaria checagens aqui.
+        const airport = await prisma.airport.delete({
+            where: { id: parseInt(id) },
+        });
+        res.status(200).json({ message: `Aeroporto com id ${id} deletado com sucesso.`, airport });
+    } catch (error) {
+        if (error.code === 'P2025') { // Record to delete does not exist.
+            return res.status(404).json({ error: `Aeroporto com id ${id} não encontrado.` });
+        }
+        console.error("Erro ao deletar aeroporto:", error.message);
+        res.status(500).json({ error: 'Não foi possível deletar o aeroporto.', details: error.message });
+    }
+};
+
 export const createAirport = async (req, res) => {
   try {
     const { name, iataCode, city, state, latitude, longitude } = req.body;
