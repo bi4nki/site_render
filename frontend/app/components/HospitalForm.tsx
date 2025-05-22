@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react'; // useEffect não é usado aqui, pode remover se não houver mais lógica
+import { useState } from 'react';
 import { useRouter } from 'next/navigation'; 
 
 export interface HospitalFormData {
@@ -14,7 +14,7 @@ export interface HospitalFormData {
 }
 
 interface HospitalFormProps {
-  initialData?: HospitalFormData & { id?: number }; 
+  initialData?: Partial<HospitalFormData & { id?: number, transplantTypes?: string[] | string }>; 
   onSubmit: (data: HospitalFormData) => Promise<void>;
   isSubmitting: boolean;
   submitButtonText?: string;
@@ -26,18 +26,24 @@ export default function HospitalForm({
   isSubmitting,
   submitButtonText = "Salvar Hospital"
 }: HospitalFormProps) {
+
+  let processedInitialTransplantTypes = '';
+  if (initialData?.transplantTypes) {
+    if (Array.isArray(initialData.transplantTypes)) {
+      processedInitialTransplantTypes = (initialData.transplantTypes as string[]).join(', ');
+    } else {
+      processedInitialTransplantTypes = initialData.transplantTypes as string; 
+    }
+  }
+
   const [formData, setFormData] = useState<HospitalFormData>({
-    name: '',
-    address: '',
-    city: '',
-    state: '',
-    latitude: '',
-    longitude: '',
-    transplantTypes: '',
-    ...initialData,
-    transplantTypes: initialData?.transplantTypes && Array.isArray(initialData.transplantTypes)
-                        ? (initialData.transplantTypes as string[]).join(', ')
-                        : initialData?.transplantTypes || ''
+    name: initialData?.name || '',
+    address: initialData?.address || '',
+    city: initialData?.city || '',
+    state: initialData?.state || '',
+    latitude: initialData?.latitude || '',
+    longitude: initialData?.longitude || '',
+    transplantTypes: processedInitialTransplantTypes,
   });
 
   const router = useRouter();
@@ -52,20 +58,16 @@ export default function HospitalForm({
     await onSubmit(formData);
   };
 
+  
   return (
-    // Formulário com espaçamento e largura máxima
     <form onSubmit={handleSubmit} className="space-y-6 max-w-xl mx-auto bg-white p-6 sm:p-8 rounded-lg shadow-md border border-slate-200">
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
           Nome do Hospital:
         </label>
         <input 
-          type="text" 
-          id="name" 
-          name="name" 
-          value={formData.name} 
-          onChange={handleChange} 
-          required 
+          type="text" id="name" name="name" value={formData.name} 
+          onChange={handleChange} required 
           className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 sm:text-sm"
         />
       </div>
@@ -74,10 +76,7 @@ export default function HospitalForm({
           Endereço:
         </label>
         <input 
-          type="text" 
-          id="address" 
-          name="address" 
-          value={formData.address} 
+          type="text" id="address" name="address" value={formData.address} 
           onChange={handleChange} 
           className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 sm:text-sm"
         />
@@ -115,27 +114,20 @@ export default function HospitalForm({
           Tipos de Transplante (separados por vírgula):
         </label>
         <input 
-          type="text" 
-          id="transplantTypes" 
-          name="transplantTypes" 
-          value={formData.transplantTypes} 
-          onChange={handleChange} 
-          placeholder="Ex: RIM, FIGADO, CORACAO" 
+          type="text" id="transplantTypes" name="transplantTypes" value={formData.transplantTypes} 
+          onChange={handleChange} placeholder="Ex: RIM, FIGADO, CORACAO" 
           className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 sm:text-sm"
         />
       </div>
       <div className="flex flex-col sm:flex-row sm:justify-end sm:space-x-3 pt-4">
         <button 
-          type="button" 
-          onClick={() => router.push('/hospitals')} 
-          disabled={isSubmitting} 
+          type="button" onClick={() => router.push('/hospitals')} disabled={isSubmitting} 
           className="w-full sm:w-auto mb-2 sm:mb-0 px-4 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
         >
           Cancelar
         </button>
         <button 
-          type="submit" 
-          disabled={isSubmitting} 
+          type="submit" disabled={isSubmitting} 
           className="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition duration-150 ease-in-out"
         >
           {isSubmitting ? 'Salvando...' : submitButtonText}
