@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import DonorForm, { DonorFormData } from '../../components/DonorForm'; // Ajuste o path se necessário
-
+import DonorForm, { DonorFormData } from '../../components/DonorForm';
 export default function NewDonorPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +22,6 @@ export default function NewDonorPage() {
       bloodType: formData.bloodType,
       hospitalId: parseInt(formData.hospitalId, 10),
       organId: parseInt(formData.organId, 10),
-      // Envia availabilityDateTime apenas se tiver valor, senão o backend usará o default
       ...(formData.availabilityDateTime && { availabilityDateTime: new Date(formData.availabilityDateTime).toISOString() })
     };
 
