@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import masterDataRoutes from './routes/masterDataRoutes.js';
-import optimizationRoutes from './routes/optimizationRoutes.js'; // <--- ADICIONE ESTA LINHA
-
+import optimizationRoutes from './routes/optimizationRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js'
 dotenv.config();
 
 const app = express();
@@ -20,7 +20,8 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/master-data', masterDataRoutes);
-app.use('/api/process', optimizationRoutes); // <--- ADICIONE ESTA LINHA (ou /api/optimize se preferir)
+app.use('/api/process', optimizationRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error Handling Middleware (simples)
 app.use((err, req, res, next) => {
