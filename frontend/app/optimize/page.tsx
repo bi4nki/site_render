@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
-import Link from 'next/link'; // Opcional, se quiser adicionar links
+import Link from 'next/link'; 
 
-// Interfaces para os dados da resposta do backend e para os dropdowns
 interface HospitalSimple { 
   id: number; 
   name: string; 
-  // city?: string; // Adicione se o backend enviar e você quiser usar
 }
+
 interface OrganSimple { 
   id: number; 
   name: string; 
@@ -17,21 +16,18 @@ interface OrganSimple {
 interface DonorForDropdown {
   id: number;
   bloodType: string;
-  hospital: HospitalSimple; // Espera que o backend envie o objeto hospital aninhado
-  organ: OrganSimple;      // Espera que o backend envie o objeto organ aninhado
-  // availabilityDateTime?: string; // Adicione se quiser exibir no dropdown
+  hospital: HospitalSimple; o
+  organ: OrganSimple;      
 }
 
 interface ReceiverForDropdown {
   id: number;
   bloodType: string;
-  hospital: HospitalSimple;   // Espera hospital aninhado
-  organNeeded: OrganSimple; // Espera organNeeded aninhado
+  hospital: HospitalSimple;   
+  organNeeded: OrganSimple; 
   urgencyLevel: number;
-  // registrationDate?: string; // Adicione se quiser exibir no dropdown
 }
 
-// Interfaces para o resultado da otimização (como definido anteriormente)
 interface DonorInfo { id: number; hospital: string; organ: string; maxIschemiaHours: number; bloodType?: string; }
 interface ReceiverInfo { id: number; hospital: string; urgency: number; bloodType?: string; }
 interface MLRecommendation { predicted_class_index: number; predicted_transport_mode: string; probabilities: number[]; }
@@ -68,7 +64,7 @@ export default function OptimizePage() {
 
     const fetchDataForDropdowns = async () => {
       setLoadingDropdownData(true);
-      setError(null); // Limpa erros anteriores ao buscar dados
+      setError(null);
       try {
         console.log("OptimizePage: Buscando doadores e receptores para dropdowns...");
         const [donorsRes, receiversRes] = await Promise.all([
@@ -100,8 +96,8 @@ export default function OptimizePage() {
       } catch (e: any) {
         console.error("OptimizePage: Erro ao carregar dados para dropdowns:", e);
         setError(e.message || "Erro ao carregar dados para seleção.");
-        setDonors([]); // Limpa em caso de erro
-        setReceivers([]); // Limpa em caso de erro
+        setDonors([]);
+        setReceivers([]); 
       } finally {
         setLoadingDropdownData(false);
       }
@@ -176,9 +172,9 @@ export default function OptimizePage() {
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
       <h1>Otimizar Transporte de Órgãos</h1>
       {loadingDropdownData && <p style={{textAlign: 'center', fontWeight: 'bold'}}>Carregando opções de doadores e receptores...</p>}
-      {!loadingDropdownData && error && !donors.length && !receivers.length && <p style={{ color: 'red', fontWeight: 'bold' }}>{error}</p> /* Mostra erro do dropdown se não houver dados */}
+      {!loadingDropdownData && error && !donors.length && !receivers.length && <p style={{ color: 'red', fontWeight: 'bold' }}>{error}</p>}
       
-      {!loadingDropdownData && (donors.length > 0 || receivers.length > 0 || !error) && ( // Mostra formulário se dados carregados ou se não houve erro de dropdown
+      {!loadingDropdownData && (donors.length > 0 || receivers.length > 0 || !error) && (
         <form onSubmit={handleSubmit} style={{ marginBottom: '30px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px' }}>
           <div style={{ marginBottom: '10px' }}>
             <label htmlFor="donorId" style={{ display: 'block', marginBottom: '5px' }}>Selecione o Doador:</label>
@@ -224,7 +220,7 @@ export default function OptimizePage() {
       )}
 
       {isLoading && !loadingDropdownData && <p style={{ textAlign: 'center' }}>Processando otimização...</p>}
-      {/* Mostra erro da otimização se não for erro do dropdown */}
+      {}
       {error && !loadingDropdownData && (donors.length > 0 || receivers.length > 0) && <p style={{ color: 'red', fontWeight: 'bold', textAlign: 'center', padding: '10px', border: '1px solid red', borderRadius: '4px' }}>Erro na Otimização: {error}</p>}
       
       {result && !error && (
