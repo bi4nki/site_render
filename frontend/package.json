@@ -13,8 +13,12 @@
     "react": "^18",
     "react-dom": "^18"
   },
-  "devDependencies": {
+  "devDependencies": { // <--- SEÇÃO A SER ADICIONADA/MODIFICADA
+    "@types/node": "^20.11.0",    // Exemplo de versão, pode ser a mais recente
+    "@types/react": "^18.2.47",   // Exemplo de versão
+    "@types/react-dom": "^18.2.18", // Exemplo de versão (opcional, mas bom ter)
     "eslint": "^8",
-    "eslint-config-next": "14.2.3"
+    "eslint-config-next": "14.2.3",
+    "typescript": "^5.3.3"       // Exemplo de versão
   }
 }
