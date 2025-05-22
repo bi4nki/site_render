@@ -10,15 +10,16 @@ import joblib
 import os
 
 # --- Parâmetros de Treinamento ---
-INPUT_CSV_PATH = "synthetic_transport_data.csv" # Gerado pelo data_generator.py
-MODEL_SAVE_DIR = "../model/" # Salvar na pasta model, um nível acima de training_scripts
+INPUT_CSV_PATH = "synthetic_transport_data.csv"
+MODEL_SAVE_DIR = "../model/" 
 MODEL_NAME = "organ_transport_model.h5"
 SCALER_NAME = "scaler.joblib"
-NUM_CLASSES = 3 # Terrestre, Aéreo Comercial, Aéreo Dedicado
+TFLITE_MODEL_NAME = 'organ_transport_model.tflite' # Nome do arquivo TFLite
+NUM_CLASSES = 3 
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
 
-def treinar_modelo():
+def treinar_modelo(): # A função começa aqui
     # Criar diretório para salvar modelo se não existir
     if not os.path.exists(MODEL_SAVE_DIR):
         os.makedirs(MODEL_SAVE_DIR)
@@ -35,18 +36,14 @@ def treinar_modelo():
     # 2. Preparar Features (X) e Target (y)
     X = df.drop("melhor_modal", axis=1)
     y = df["melhor_modal"]
-
-    # Converter y para one-hot encoding
     y_categorical = to_categorical(y, num_classes=NUM_CLASSES)
 
     # 3. Dividir em Treino e Teste
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y_categorical, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y # stratify para classes desbalanceadas
+        X, y_categorical, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
     )
 
     # 4. Escalar Features Numéricas
-    # Identificar colunas numéricas (todas neste caso, exceto as booleanas que já são 0 ou 1)
-    # Se você tivesse colunas categóricas não numéricas, precisaria de OneHotEncoder ou similar
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
@@ -58,22 +55,21 @@ def treinar_modelo():
         Dense(64, activation='relu'),
         Dropout(0.3),
         Dense(32, activation='relu'),
-        Dense(NUM_CLASSES, activation='softmax') # Softmax para classificação multiclasse
+        Dense(NUM_CLASSES, activation='softmax')
     ])
 
     model.compile(optimizer='adam',
-                  loss='categorical_crossentropy', # Para one-hot encoded labels
+                  loss='categorical_crossentropy',
                   metrics=['accuracy'])
-
     model.summary()
 
     # 6. Treinar o Modelo
     print("\nIniciando treinamento do modelo...")
     history = model.fit(X_train_scaled, y_train,
-                        epochs=50, # Aumente para melhor performance, mas mais tempo de treino
+                        epochs=50,
                         batch_size=32,
-                        validation_split=0.15, # Usar parte dos dados de treino para validação
-                        verbose=1) # 0=silencioso, 1=barra de progresso, 2=uma linha por época
+                        validation_split=0.15,
+                        verbose=1)
 
     # 7. Avaliar o Modelo
     print("\nAvaliando o modelo nos dados de teste...")
@@ -81,15 +77,37 @@ def treinar_modelo():
     print(f"Loss no Teste: {loss:.4f}")
     print(f"Acurácia no Teste: {accuracy:.4f}")
 
-    # 8. Salvar o Modelo e o Scaler
+    # 8. Salvar o Modelo Keras (.h5) e o Scaler (.joblib)
     model_path = os.path.join(MODEL_SAVE_DIR, MODEL_NAME)
-    scaler_path = os.path.join(MODEL_SAVE_DIR, SCALER_NAME)
+    scaler_path = os.path.join(MODEL_SAVE_DIR, SCALER_NAME) # scaler_path é definido aqui
     
     model.save(model_path)
     joblib.dump(scaler, scaler_path)
 
-    print(f"\nModelo salvo em: {model_path}")
-    print(f"Scaler salvo em: {scaler_path}")
+    print(f"\nModelo Keras salvo em: {model_path}")
+    print(f"Scaler salvo em: {scaler_path}") # Agora este print está no escopo correto
+
+    # --- Adicionar Conversão para TensorFlow Lite ---
+    # ESTE BLOCO DEVE ESTAR DENTRO DA FUNÇÃO treinar_modelo()
+    print("\nConvertendo modelo Keras para TensorFlow Lite...")
+    try:
+        # 'model' é a variável do seu modelo Keras treinado
+        converter = tf.lite.TFLiteConverter.from_keras_model(model)
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        tflite_model_content = converter.convert()
+
+        tflite_model_path = os.path.join(MODEL_SAVE_DIR, TFLITE_MODEL_NAME)
+        
+        with open(tflite_model_path, 'wb') as f:
+            f.write(tflite_model_content)
+        print(f"Modelo TensorFlow Lite salvo em: {tflite_model_path}")
+        print("Conversão para TFLite concluída com sucesso.")
+
+    except Exception as e_tflite:
+        print(f"ERRO durante a conversão para TensorFlow Lite: {e_tflite}")
+    # --- Fim da Conversão para TensorFlow Lite ---
+
+# A função treinar_modelo() termina aqui
 
 if __name__ == "__main__":
-    treinar_modelo()
+    treinar_modelo() # Chamada da função
