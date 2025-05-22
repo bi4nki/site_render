@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Reutilizar ou redefinir interfaces se necessário
 interface Hospital {
   id: number;
   name: string;
@@ -16,10 +15,10 @@ interface Organ {
 
 export interface ReceiverFormData {
   bloodType: string;
-  urgencyLevel: string; // Input é string, converter para número
-  hospitalId: string;   // Input é string
-  organNeededId: string;// Input é string
-  registrationDate?: string; // Opcional, formato ISO string
+  urgencyLevel: string; 
+  hospitalId: string;   
+  organNeededId: string;
+  registrationDate?: string; 
 }
 
 interface ReceiverFormProps {
@@ -37,7 +36,7 @@ export default function ReceiverForm({
 }: ReceiverFormProps) {
   const [formData, setFormData] = useState<ReceiverFormData>({
     bloodType: '',
-    urgencyLevel: '3', // Default para urgência média
+    urgencyLevel: '3',
     hospitalId: '',
     organNeededId: '',
     registrationDate: initialData?.registrationDate || new Date().toISOString().substring(0, 16),
