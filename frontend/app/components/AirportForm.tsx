@@ -8,8 +8,8 @@ export interface AirportFormData {
   iataCode: string;
   city: string;
   state: string;
-  latitude: string;  // Input é string
-  longitude: string; // Input é string
+  latitude: string;
+  longitude: string;
 }
 
 interface AirportFormProps {
