@@ -9,7 +9,6 @@ interface Airport {
   iataCode: string;
   city: string;
   state: string;
-  // latitude e longitude podem ser omitidas da tabela de listagem para simplicidade
 }
 
 export default function AirportsPage() {
@@ -19,7 +18,7 @@ export default function AirportsPage() {
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-  const fetchAirports = async () => { // Movido para fora do useEffect para poder chamar no delete
+  const fetchAirports = async () => {
     if (!backendUrl) {
       setError("URL do Backend não configurada.");
       setIsLoading(false);
@@ -44,7 +43,7 @@ export default function AirportsPage() {
 
   useEffect(() => {
     fetchAirports();
-  }, [backendUrl]); // Dependência apenas em backendUrl
+  }, [backendUrl]);
 
   const handleDelete = async (airportId: number) => {
     if (!backendUrl) {
@@ -52,7 +51,6 @@ export default function AirportsPage() {
         return;
     }
     if (confirm(`Tem certeza que deseja deletar o aeroporto com ID ${airportId}?`)) {
-        // setIsLoading(true); // Pode adicionar um loading específico para deleção
         try {
             const response = await fetch(`${backendUrl}/api/master-data/airports/${airportId}`, {
                 method: 'DELETE',
@@ -62,11 +60,10 @@ export default function AirportsPage() {
                 throw new Error(errorData.error || `Erro ao deletar aeroporto: ${response.statusText}`);
             }
             alert("Aeroporto deletado com sucesso!");
-            fetchAirports(); // Recarrega a lista de aeroportos
+            fetchAirports(); 
         } catch (e: any) {
             setError(e.message || "Ocorreu um erro desconhecido ao deletar o aeroporto.");
         } finally {
-            // setIsLoading(false);
         }
     }
   };
