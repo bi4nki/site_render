@@ -137,14 +137,45 @@ export const optimizeTransport = async (req, res) => {
             }
         }
         
-        let disponibilidade_voo_dedicado_bool_feat = 0.0; // Definição da variável
-        if ( (distancia_km_ponta_a_ponta > 150 && urgencia_receptor <= 2 && Math.random() > 0.3) ||
-             (distancia_km_ponta_a_ponta > 600 && disponibilidade_voo_comercial_bool_feat === 0.0 && horario_compativel_voo_comercial_bool_feat === 0.0 && Math.random() > 0.2) ||
-             (tempo_isquemia_max_horas <= 6 && distancia_km_ponta_a_ponta > 400 && Math.random() > 0.25) ) {
-            disponibilidade_voo_dedicado_bool_feat = 1.0;
+       // No arquivo backend-api/controllers/optimizationController.js
+// Dentro da função optimizeTransport
+
+// ... (cálculo de distancia_km_ponta_a_ponta, tempo_isquemia_max_horas, urgencia_receptor)
+// ... (lógica para disponibilidade_voo_comercial_bool_feat e horario_compativel_voo_comercial_bool_feat como antes) ...
+        
+        // --- Simulação para Voo Dedicado (Lógica MAIS ABRANGENTE) ---
+        let disponibilidade_voo_dedicado_bool_feat = 0.0;
+        
+        // Condição 1: Distância moderada a longa - voo dedicado é uma consideração
+        if (distancia_km_ponta_a_ponta > 300) { // A partir de 300km, aéreo dedicado começa a ser considerado
+            // Aumenta a chance de disponibilidade com a distância ou urgência
+            let chanceBaseDedicado = 0.3; // Chance base de 30%
+            if (distancia_km_ponta_a_ponta > 1000) chanceBaseDedicado += 0.2; // +20% se > 1000km
+            if (distancia_km_ponta_a_ponta > 2000) chanceBaseDedicado += 0.2; // +20% se > 2000km
+            if (urgencia_receptor <= 2) chanceBaseDedicado += 0.2;         // +20% se urgência alta
+            if (tempo_isquemia_max_horas <= 8) chanceBaseDedicado += 0.15; // +15% se isquemia curta/média
+
+            // Garante que a chance não passe de um limite razoável, ex: 90%
+            chanceBaseDedicado = Math.min(chanceBaseDedicado, 0.90); 
+
+            if (Math.random() < chanceBaseDedicado) {
+                disponibilidade_voo_dedicado_bool_feat = 1.0;
+            }
+        }
+        
+        // Condição 2: Urgência muito alta ou isquemia muito curta, mesmo para distâncias menores (mas não triviais)
+        if (disponibilidade_voo_dedicado_bool_feat === 0.0 && distancia_km_ponta_a_ponta > 100) {
+            if (urgencia_receptor === 1 || tempo_isquemia_max_horas <= 4) { // Urgência máxima ou isquemia criticamente curta
+                if (Math.random() < 0.8) { // Alta chance de ter dedicado nestes casos
+                    disponibilidade_voo_dedicado_bool_feat = 1.0;
+                }
+            }
         }
 
-        // AGORA O CONSOLE.LOG ESTÁ NO LUGAR CERTO (APÓS A DEFINIÇÃO DA VARIÁVEL)
+        // Linha de teste (REMOVA OU COMENTE APÓS TESTAR):
+        // disponibilidade_voo_dedicado_bool_feat = 1.0; 
+        // console.log("Backend: FORÇANDO disponibilidade_voo_dedicado_bool_feat = 1.0 PARA TESTE");
+
         console.log("Backend: Feature de disponibilidade_voo_dedicado_bool_feat (para ML):", disponibilidade_voo_dedicado_bool_feat);
 
         const feature_values_for_ml = [
@@ -153,8 +184,10 @@ export const optimizeTransport = async (req, res) => {
             parseFloat(urgencia_receptor),
             disponibilidade_voo_comercial_bool_feat,
             horario_compativel_voo_comercial_bool_feat,
-            disponibilidade_voo_dedicado_bool_feat
+            disponibilidade_voo_dedicado_bool_feat // Este valor virá da nova lógica
         ];
+        
+        // ... (resto do código como estava) ...
         
         console.log("Backend: Features enviadas para o ML V2:", feature_values_for_ml);
 
