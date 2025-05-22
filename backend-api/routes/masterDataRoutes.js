@@ -4,7 +4,8 @@ import {
   createHospital, getHospitals, deleteHospital,
   createAirport, getAirports,
   createDonor, getDonors, deleteDonor,       // Adicionado deleteDonor
-  createReceiver, getReceivers, deleteReceiver // Adicionado deleteReceiver
+  createReceiver, getReceivers, deleteReceiver, // Adicionado deleteReceiver
+  deleteTransportLog, getTransportLogs, deleteAllTransportLogs
 } from '../controllers/masterDataController.js';
 
 const router = express.Router();
@@ -33,5 +34,10 @@ router.delete('/donors/:id', deleteDonor); // NOVA ROTA
 router.post('/receivers', createReceiver);
 router.get('/receivers', getReceivers);
 router.delete('/receivers/:id', deleteReceiver); // NOVA ROTA
+
+// TransportLogs (ADICIONAR ESTAS ROTAS)
+router.get('/transport-logs', getTransportLogs);
+router.delete('/transport-logs/:id', deleteTransportLog);
+router.delete('/transport-logs', deleteAllTransportLogs); // Para deletar todos
 
 export default router;
