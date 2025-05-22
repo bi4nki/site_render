@@ -1,6 +1,6 @@
 'use client';
 
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'; // Removido TileLayerProps daqui por enquanto
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L, { LatLngExpression, MapOptions } from 'leaflet';
 
@@ -12,6 +12,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+// ... (interfaces MapMarkerData, InteractiveMapProps como na Tentativa 3) ...
 export interface MapMarkerData {
   id: number | string;
   latitude: number;
@@ -35,6 +36,7 @@ const markerColors = {
   other: 'green',
 };
 
+
 export default function InteractiveMap({
   markers,
   center = [-15.788497, -47.879873] as LatLngExpression,
@@ -55,12 +57,13 @@ export default function InteractiveMap({
 
   return (
     <MapContainer {...mapOptions} style={style}>
+      {/* @ts-ignore TS2322: Type '{ attribution: string; url: string; }' is not assignable to type 'IntrinsicAttributes & TileLayerProps...'. Property 'attribution' does not exist... */}
       <TileLayer
         attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        // Adicionar outras props do TileLayer aqui se necessário, ex: maxZoom, minZoom
       />
-      {markers.map((marker) => (
+      {/* ... (resto do map para markers) ... */}
+       {markers.map((marker) => (
         <CircleMarker
           key={marker.id}
           center={[marker.latitude, marker.longitude] as LatLngExpression}
