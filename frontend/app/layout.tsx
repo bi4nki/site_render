@@ -24,6 +24,7 @@ export default function RootLayout({
         <nav style={{ padding: '10px 20px', backgroundColor: '#f0f0f0', marginBottom: '20px', borderBottom: '1px solid #ddd', display: 'flex', gap: '15px' }}>
           <Link href="/">Home</Link>
           <Link href="/optimize">Otimizar Transporte</Link>
+          <Link href="/donors">Doadores</Link>
           <Link href="/hospitals">Hospitais</Link>
           <Link href="/organs">Órgãos</Link>
           <Link href="/airports">Aeroportos</Link>
