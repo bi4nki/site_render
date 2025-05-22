@@ -182,7 +182,7 @@ export const optimizeTransport = async (req, res) => {
         
         const horario_atual_simulado_backend = Math.floor(Math.random() * 24);
         const tempo_preparacao_ate_decolagem_comercial_backend = randomUniform(2,4); 
-        const horario_decolagem_estimado_backend = (horario_atual_simulado_backend + tempo_preparacao_ate_decolagem_comercial_backend);
+        const horario_decolagem_estimado_backend = (horario_atual_simulado_backend + tempo_preparacao_ate_decolagem_comercial_backend) % 24;
         
         let horario_compativel_voo_comercial_bool_feat = 0.0;
         if (disponibilidade_voo_comercial_bool_feat === 1.0) {
