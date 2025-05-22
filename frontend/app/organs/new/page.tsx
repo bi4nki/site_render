@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import OrganForm, { OrganFormData } from '../../components/OrganForm'; // Ajuste o path se necessário
+import OrganForm, { OrganFormData } from '../../components/OrganForm'; 
 
 export default function NewOrganPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,7 +21,7 @@ export default function NewOrganPage() {
 
     const dataToSubmit = {
       name: formData.name,
-      maxIschemiaHours: parseInt(formData.maxIschemiaHours, 10), // Converter para número
+      maxIschemiaHours: parseInt(formData.maxIschemiaHours, 10), 
     };
 
     try {
