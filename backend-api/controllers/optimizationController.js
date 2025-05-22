@@ -1,10 +1,9 @@
 import { PrismaClient } from '@prisma/client';
-import axios from 'axios'; // Para fazer chamadas HTTP para o ml-service
+import axios from 'axios';
 
 const prisma = new PrismaClient();
 
-// Nomes e ordem das 6 features como o ml-service V_MAIS_RECENTE (ex: V4 ou V5) espera
-const ML_EXPECTED_FEATURE_NAMES = [ // Garanta que esta lista corresponde ao seu modelo treinado
+const ML_EXPECTED_FEATURE_NAMES = [ 
     "distancia_km", "tempo_isquemia_max_horas", "urgencia_receptor",
     "disponibilidade_voo_comercial_bool",
     "horario_compativel_voo_comercial_bool",
@@ -19,7 +18,7 @@ const TEMPO_SOLO_AEROPORTOS_COMERCIAL_HORAS_BACKEND = 1.0;
 const TEMPO_SOLO_AEROPORTOS_DEDICADO_HORAS_BACKEND = 0.75;
 const TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND = 1.2; // Soma dos dois trechos (origem + destino)
 
-// Horários de "pico" para voos comerciais simulados (0-23h)
+// Horários de "pico" para voos comerciais simulados entre 0-23h
 const HORARIO_PICO_VOO_INICIO_BACKEND = 6; 
 const HORARIO_PICO_VOO_FIM_BACKEND = 22;   
 
@@ -30,7 +29,7 @@ function deg2rad(deg) {
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     if (typeof lat1 !== 'number' || typeof lon1 !== 'number' || typeof lat2 !== 'number' || typeof lon2 !== 'number') {
         console.error("Coordenadas inválidas para cálculo de distância:", lat1, lon1, lat2, lon2);
-        return 0; // Retorna 0 ou lança um erro, dependendo de como quer tratar
+        return 0;
     }
     const R = 6371; // Raio da Terra em km
     const dLat = deg2rad(lat2 - lat1);
@@ -44,14 +43,10 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     return parseFloat(d.toFixed(1));
 }
 
-function randomUniform(min, max) { // Função para simular Python random.uniform
+function randomUniform(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-/**
- * Verifica a compatibilidade básica do tipo sanguíneo ABO.
- * Ignora o fator Rh para simplificação inicial em transplante de órgãos.
- */
 function checkABOCompatibility(donorBloodType, receiverBloodType) {
     if (!donorBloodType || !receiverBloodType) return false; // Precisa de ambos os tipos
 
@@ -69,18 +64,16 @@ function checkABOCompatibility(donorBloodType, receiverBloodType) {
 }
 
 function calcularTempoEstimadoViagemBackend(distanciaKmOuDistanciaVoo, modal, disponibilidadeBool, tempoIsquemiaMaxHoras) {
-    if (modal !== 0 && !disponibilidadeBool) { // Se não for terrestre e não estiver disponível
+    if (modal !== 0 && !disponibilidadeBool) { 
         let motivoIndisponibilidade = "Indisponível (simulado).";
-        if (modal === 1 && disponibilidadeBool === 0.0 /*&& horario era o problema, mas essa info não chega aqui*/) {
-            // A lógica de horário já foi considerada em disponibilidadeBool para Aéreo Comercial
-            // Esta função recebe a disponibilidade FINAL para o cálculo de tempo.
+        if (modal === 1 && disponibilidadeBool === 0.0) {
         }
         return { tempoHoras: null, detalhes: motivoIndisponibilidade, risco: "N/A", isViableIschemia: false };
     }
 
     let tempoViagemHoras;
     let detalhes = "";
-    let risco = "Baixo"; // Default
+    let risco = "Baixo";
 
     switch (modal) {
         case 0: // Terrestre
