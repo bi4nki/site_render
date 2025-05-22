@@ -4,33 +4,32 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout # Input
+from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.utils import to_categorical
 import joblib
 import os
 
 # --- Parâmetros de Treinamento ---
-INPUT_CSV_PATH = "synthetic_transport_data_v5.csv" # Usar o novo CSV
+INPUT_CSV_PATH = "synthetic_transport_data_v5.csv"
 MODEL_SAVE_DIR = "../model/" 
-MODEL_NAME_H5 = "organ_transport_model_v2.h5" # Novo nome para o modelo Keras
-SCALER_NAME_V2 = "scaler_v2.joblib" # Novo nome para o scaler
-TFLITE_MODEL_NAME_V2 = 'organ_transport_model_v2.tflite' # Novo nome para TFLite
+MODEL_NAME_H5 = "organ_transport_model_v2.h5" 
+SCALER_NAME_V2 = "scaler_v2.joblib" r
+TFLITE_MODEL_NAME_V2 = 'organ_transport_model_v2.tflite' 
 NUM_CLASSES = 3 
-NUM_FEATURES = 6 # ATUALIZADO: distancia, isquemia, urgencia, disp_comercial, horario_comercial, disp_dedicado
+NUM_FEATURES = 6
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
 
 def treinar_modelo():
-    # ... (criar MODEL_SAVE_DIR se não existir) ...
     if not os.path.exists(MODEL_SAVE_DIR):
         os.makedirs(MODEL_SAVE_DIR)
 
     try:
         df = pd.read_csv(INPUT_CSV_PATH)
-    except FileNotFoundError: # ... (erro como antes) ...
+    except FileNotFoundError: 
         return
     print(f"Dados carregados: {df.shape[0]} amostras, {df.shape[1]} colunas.")
-    if df.shape[1] != NUM_FEATURES + 1: # +1 para a coluna target 'melhor_modal'
+    if df.shape[1] != NUM_FEATURES + 1: 
         print(f"ERRO: Número de colunas no CSV ({df.shape[1]-1} features) não corresponde ao esperado ({NUM_FEATURES} features).")
         print(f"Colunas encontradas: {list(df.columns)}")
         return
@@ -48,17 +47,15 @@ def treinar_modelo():
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # Reconstruir o modelo com a input_shape correta para NUM_FEATURES
+
     model = Sequential([
-        # tf.keras.layers.Input(shape=(NUM_FEATURES,)), # Maneira recomendada
-        Dense(128, activation='relu', input_shape=(NUM_FEATURES,)), # Ou manter assim
+        Dense(128, activation='relu', input_shape=(NUM_FEATURES,)),
         Dropout(0.3),
         Dense(64, activation='relu'),
         Dropout(0.3),
         Dense(32, activation='relu'),
         Dense(NUM_CLASSES, activation='softmax')
     ])
-    # ... (compile, summary, fit, evaluate como antes) ...
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     model.summary()
     print("\nIniciando treinamento do modelo V2...")
