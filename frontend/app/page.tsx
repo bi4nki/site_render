@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Hospital, Plane, Users, Activity, PlusCircle } from 'lucide-react'; // Ícones Lucide (instalar)
+import { ArrowRight, Building, Plane, Users, Activity, PlusCircle } from 'lucide-react'; // Ícones Lucide (instalar)
 
 // Interface para as estatísticas
 interface DashboardStats {
@@ -82,7 +82,7 @@ export default function HomePage() {
         <>
           {/* Seção de Cards de Estatísticas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            <StatCard title="Hospitais" value={stats.hospitalCount} icon={<Hospital className="h-8 w-8 text-blue-500" />} colorClass="border-blue-500" />
+            <StatCard title="Hospitais" value={stats.hospitalCount} icon={<Building className="h-8 w-8 text-blue-500" />} colorClass="border-blue-500" />
             <StatCard title="Órgãos (Tipos)" value={stats.organCount} icon={<Activity className="h-8 w-8 text-green-500" />} colorClass="border-green-500" />
             <StatCard title="Aeroportos" value={stats.airportCount} icon={<Plane className="h-8 w-8 text-indigo-500" />} colorClass="border-indigo-500" />
             <StatCard title="Doadores" value={stats.donorCount} icon={<Users className="h-8 w-8 text-teal-500" />} colorClass="border-teal-500" />
