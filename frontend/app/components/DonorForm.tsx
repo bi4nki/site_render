@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Supondo que você tenha essas interfaces definidas em algum lugar ou as defina aqui
 interface Hospital {
   id: number;
   name: string;
@@ -16,9 +15,9 @@ interface Organ {
 
 export interface DonorFormData {
   bloodType: string;
-  hospitalId: string; // Mantém como string para o select, converte ao submeter
-  organId: string;    // Mantém como string para o select
-  availabilityDateTime?: string; // Opcional, formato ISO string
+  hospitalId: string;
+  organId: string;    
+  availabilityDateTime?: string;
 }
 
 interface DonorFormProps {
@@ -38,7 +37,7 @@ export default function DonorForm({
     bloodType: '',
     hospitalId: '',
     organId: '',
-    availabilityDateTime: initialData?.availabilityDateTime || new Date().toISOString().substring(0, 16), // Default para data/hora atual
+    availabilityDateTime: initialData?.availabilityDateTime || new Date().toISOString().substring(0, 16),
     ...initialData,
   });
 
@@ -71,8 +70,7 @@ export default function DonorForm({
 
         setHospitals(hospitalsData);
         setOrgans(organsData);
-
-        // Se for edição e initialData existir, pré-selecionar
+       
         if (initialData?.hospitalId) {
             setFormData(prev => ({...prev, hospitalId: String(initialData.hospitalId)}));
         }
@@ -82,13 +80,12 @@ export default function DonorForm({
 
       } catch (error) {
         console.error("Erro ao carregar dados para dropdowns:", error);
-        // Tratar erro (ex: mostrar mensagem para o usuário)
       } finally {
         setLoadingDropdowns(false);
       }
     };
     fetchDataForDropdowns();
-  }, [backendUrl, initialData]); // Adiciona initialData para re-selecionar em edição
+  }, [backendUrl, initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -97,7 +94,6 @@ export default function DonorForm({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Validação para garantir que hospitalId e organId foram selecionados
     if (!formData.hospitalId || !formData.organId) {
         alert("Por favor, selecione um hospital e um órgão.");
         return;
