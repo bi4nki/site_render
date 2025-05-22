@@ -84,8 +84,6 @@ model TransportLog {
   id                      Int      @id @default(autoincrement())
   donorId                 Int
   receiverId              Int
-  // donor                 Donor    @relation(fields: [donorId], references: [id]) 
-  // receiver              Receiver @relation(fields: [receiverId], references: [id])
   
   selectedTransportMode String 
   estimatedTimeHours    Float
