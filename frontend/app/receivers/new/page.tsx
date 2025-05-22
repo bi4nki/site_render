@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ReceiverForm, { ReceiverFormData } from '../../components/ReceiverForm'; // Ajuste o path
+import ReceiverForm, { ReceiverFormData } from '../../components/ReceiverForm';
 
 export default function NewReceiverPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
