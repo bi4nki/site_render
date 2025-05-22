@@ -4,10 +4,10 @@ import pandas as pd
 import numpy as np
 import random
 
-NUM_SAMPLES = 5000 # Aumentar para dar mais exemplos ao modelo
+NUM_SAMPLES = 5000
 OUTPUT_CSV_PATH = "synthetic_transport_data_v5.csv"
 
-# Constantes (manter consistentes com o backend)
+# Constantes
 VELOCIDADE_TERRESTRE_KMH = 80
 VELOCIDADE_AEREO_COMERCIAL_KMH = 800
 VELOCIDADE_AEREO_DEDICADO_KMH = 700
@@ -43,7 +43,6 @@ def gerar_dados():
     count_modals = {0:0, 1:0, 2:0}
 
     for i in range(NUM_SAMPLES):
-        # ... (geração de features como na v4: distancia, isquemia, urgencia, ...)
         distancia_km = random.uniform(50, 4000) 
         tempo_isquemia_max_horas = random.choice([4, 6, 8, 10, 12, 15, 18, 24, 30, 36, 48])
         urgencia_receptor = random.randint(1, 5)
@@ -52,22 +51,22 @@ def gerar_dados():
 
         # Voo Comercial - Disponibilidade e Horário
         disp_com_bool = 0.0
-        if distancia_km > 250 and random.random() > (0.25 if distancia_km < 1000 else 0.15): # Ajuste de probabilidade
+        if distancia_km > 250 and random.random() > (0.25 if distancia_km < 1000 else 0.15): 
             disp_com_bool = 1.0
         
         horario_atual_sim = random.randint(0, 23)
-        tempo_prep_decol_com = random.uniform(1.5, 3.0) # Ajustado
+        tempo_prep_decol_com = random.uniform(1.5, 3.0) 
         horario_decol_est_com = (horario_atual_sim + tempo_prep_decol_com) % 24
         horario_comp_com_bool = 0.0
         if disp_com_bool == 1.0:
             if HORARIO_PICO_VOO_INICIO <= horario_decol_est_com < HORARIO_PICO_VOO_FIM:
                 horario_comp_com_bool = 1.0
-            elif random.random() < 0.10: # Chance bem menor fora do pico
+            elif random.random() < 0.10:
                 horario_comp_com_bool = 1.0
         
         # Voo Dedicado - Disponibilidade
         disp_ded_bool = 0.0
-        chance_ded = 0.05 # Chance base menor
+        chance_ded = 0.05
         if distancia_km > 400: chance_ded += 0.15
         if distancia_km > 1200: chance_ded += 0.20
         if urgencia_receptor <= 2: chance_ded += 0.25
@@ -77,10 +76,7 @@ def gerar_dados():
             chance_ded += 0.35
         if random.random() < min(chance_ded, 0.90):
             disp_ded_bool = 1.0
-
-        # --- Lógica Heurística com Priorização TEMPO ---
         opcoes = []
-        # Prioridade intrínseca para desempate (menor é melhor): 1 (Comercial), 2 (Dedicado), 3 (Terrestre)
         
         # Terrestre
         tempo_t = calcular_tempo_total_estimado_para_modal(distancia_km, 0, 0, 0)
@@ -116,14 +112,14 @@ def gerar_dados():
                 opcoes_disponiveis_apenas.sort(key=lambda x: (x["tempo"], x["prioridade"]))
                 melhor_modal = opcoes_disponiveis_apenas[0]["modal"]
             else: 
-                melhor_modal = 0 # Fallback extremo
+                melhor_modal = 0
         else:
             # Há opções viáveis. PRIORIDADE MÁXIMA: MENOR TEMPO.
             # Critério de desempate: prioridade intrínseca.
             opcoes_viaveis.sort(key=lambda x: (x["tempo"], x["prioridade"]))
             melhor_modal_candidato = opcoes_viaveis[0]["modal"]
             
-            # REGRA FORTE para evitar terrestre em longas distâncias (>750km)
+            # Regra para evitar terrestre em longas distâncias (>750km)
             # se uma opção aérea for viável e não *muito* mais lenta.
             if melhor_modal_candidato == 0 and distancia_km > 750:
                 tempo_terrestre_escolhido = opcoes_viaveis[0]["tempo"]
