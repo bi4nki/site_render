@@ -1,8 +1,8 @@
 'use client';
 
-import { MapContainer, TileLayer, CircleMarker, Popup, MapContainerProps } from 'react-leaflet'; // Importar MapContainerProps
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L, { LatLngExpression, PointExpression } from 'leaflet'; // LatLngExpression é bom, PointExpression pode ser útil para outros
+import L, { LatLngExpression, MapOptions } from 'leaflet'; // Importar MapOptions
 
 // ... (código de correção do ícone como antes) ...
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -21,13 +21,17 @@ export interface MapMarkerData {
   details?: string;
 }
 
-// Usar Partial<MapContainerProps> para props que MapContainer aceita, 
-// e adicionar as nossas personalizadas.
-interface InteractiveMapProps extends Partial<Omit<MapContainerProps, 'children' | 'style'>> {
+// Definir as props que queremos passar explicitamente para MapContainer
+// e as nossas props personalizadas.
+interface InteractiveMapProps {
   markers: MapMarkerData[];
-  initialCenter?: LatLngExpression; // Renomeado para evitar conflito e ser mais explícito
-  initialZoom?: number;           // Renomeado
-  mapStyle?: React.CSSProperties; // Renomeado para evitar conflito com HTML style
+  center: LatLngExpression; // Usar LatLngExpression diretamente
+  zoom: number;
+  scrollWheelZoom?: boolean; // Tornar opcional, com default abaixo
+  style?: React.CSSProperties;
+  // Outras props específicas do MapContainer que você queira controlar
+  // podem ser adicionadas aqui, ex: minZoom, maxZoom, etc.
+  // Veja a documentação do react-leaflet para MapOptions/MapContainerProps
 }
 
 const markerColors = {
@@ -38,25 +42,28 @@ const markerColors = {
 
 export default function InteractiveMap({
   markers,
-  initialCenter = [-15.788497, -47.879873] as LatLngExpression,
-  initialZoom = 4,
-  mapStyle = { height: '500px', width: '100%' },
-  ...restOfMapContainerProps // Captura outras props válidas de MapContainer
+  center = [-15.788497, -47.879873] as LatLngExpression, // Default com cast
+  zoom = 4,
+  scrollWheelZoom = true, // Default explícito
+  style = { height: '500px', width: '100%' }
 }: InteractiveMapProps) {
   
   if (typeof window === 'undefined') {
     return null; 
   }
 
+  // Construir o objeto de opções para MapContainer
+  // Isso ajuda o TypeScript a entender melhor o que está sendo passado.
+  const mapOptions: MapOptions = {
+    center: center,
+    zoom: zoom,
+    scrollWheelZoom: scrollWheelZoom,
+    // Você pode adicionar outras opções do Leaflet aqui se necessário
+    // Ex: preferCanvas: true
+  };
+
   return (
-    // Passar as props renomeadas para as props corretas do MapContainer
-    <MapContainer 
-        center={initialCenter} 
-        zoom={initialZoom} 
-        scrollWheelZoom={restOfMapContainerProps.scrollWheelZoom ?? true} // Usa o default ou o que foi passado
-        style={mapStyle}
-        {...restOfMapContainerProps} // Espalha quaisquer outras props válidas
-    >
+    <MapContainer {...mapOptions} style={style}> {/* Espalhar as mapOptions e passar style separadamente */}
       <TileLayer
         attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
