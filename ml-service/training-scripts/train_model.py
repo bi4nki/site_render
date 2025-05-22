@@ -10,7 +10,7 @@ import joblib
 import os
 
 # --- Parâmetros de Treinamento ---
-INPUT_CSV_PATH = "synthetic_transport_data_v2.csv" # Usar o novo CSV
+INPUT_CSV_PATH = "synthetic_transport_data_v5.csv" # Usar o novo CSV
 MODEL_SAVE_DIR = "../model/" 
 MODEL_NAME_H5 = "organ_transport_model_v2.h5" # Novo nome para o modelo Keras
 SCALER_NAME_V2 = "scaler_v2.joblib" # Novo nome para o scaler
