@@ -24,19 +24,13 @@
     "@prisma/client": "^5.12.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "axios": "^1.6.8"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",
     "prisma": "^5.12.1"
   },
-  "dependencies": {
-  "@prisma/client": "^5.12.1",
-  "cors": "^2.8.5",
-  "dotenv": "^16.4.5",
-  "express": "^4.19.2",
-  "axios": "^1.6.8"
-},
   "engines": {
     "node": ">=18.0.0"
   }
