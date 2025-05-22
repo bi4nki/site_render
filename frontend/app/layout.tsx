@@ -1,7 +1,7 @@
 // frontend/app/layout.tsx
 import Link from 'next/link';
 import 'leaflet/dist/leaflet.css';
-"./globals.css';
+import './globals.css';
 
 // Opcional: Se você quiser usar uma fonte específica via next/font
 // import { Inter } from 'next/font/google'
