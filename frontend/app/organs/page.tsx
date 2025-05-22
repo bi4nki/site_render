@@ -43,14 +43,13 @@ export default function OrgansPage() {
     fetchOrgans();
   }, [backendUrl]);
 
-  // Lógica de deleção (exemplo, você pode mover para um hook ou utils)
   const handleDelete = async (organId: number) => {
     if (!backendUrl) {
         setError("URL do Backend não configurada para deleção.");
         return;
     }
     if (confirm(`Tem certeza que deseja deletar o órgão com ID ${organId}?`)) {
-        setIsLoading(true); // Pode adicionar um loading específico para deleção
+        setIsLoading(true);
         try {
             const response = await fetch(`${backendUrl}/api/master-data/organs/${organId}`, {
                 method: 'DELETE',
@@ -59,7 +58,6 @@ export default function OrgansPage() {
                 const errorData = await response.json();
                 throw new Error(errorData.error || `Erro ao deletar órgão: ${response.statusText}`);
             }
-            // Atualiza a lista de órgãos após a deleção
             setOrgans(prevOrgans => prevOrgans.filter(organ => organ.id !== organId));
             alert("Órgão deletado com sucesso!");
         } catch (e: any) {
@@ -102,8 +100,8 @@ export default function OrgansPage() {
                 <td style={{ padding: '10px' }}>{organ.name}</td>
                 <td style={{ padding: '10px' }}>{organ.maxIschemiaHours}</td>
                 <td style={{ padding: '10px' }}>
-                  {/* Adicionar link para Edição no futuro */}
-                  {/* <Link href={`/organs/edit/${organ.id}`} style={{marginRight: '10px'}}>Editar</Link> */}
+                  {}
+                  {}
                   <button onClick={() => handleDelete(organ.id)} style={{color: 'red', cursor: 'pointer'}}>Deletar</button>
                 </td>
               </tr>
