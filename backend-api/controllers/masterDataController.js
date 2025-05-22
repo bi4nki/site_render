@@ -214,6 +214,43 @@ export const getReceivers = async (req, res) => {
     }
 };
 
+// --- TRANSPORT LOGS ---
+export const getTransportLogs = async (req, res) => {
+    try {
+        const logs = await prisma.transportLog.findMany();
+        res.status(200).json(logs);
+    } catch (error) {
+        console.error("Erro ao buscar logs de transporte:", error.message);
+        res.status(500).json({ error: 'Não foi possível buscar os logs.', details: error.message });
+    }
+};
+
+export const deleteTransportLog = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const log = await prisma.transportLog.delete({
+            where: { id: parseInt(id) },
+        });
+        res.status(200).json({ message: `TransportLog com id ${id} deletado.`, log });
+    } catch (error) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({ error: `TransportLog com id ${id} não encontrado.` });
+        }
+        console.error("Erro ao deletar TransportLog:", error.message);
+        res.status(500).json({ error: 'Não foi possível deletar o TransportLog.', details: error.message });
+    }
+};
+
+export const deleteAllTransportLogs = async (req, res) => {
+    try {
+        const deleteResult = await prisma.transportLog.deleteMany({});
+        res.status(200).json({ message: `${deleteResult.count} log(s) de transporte deletados.` });
+    } catch (error) {
+        console.error("Erro ao deletar todos os logs de transporte:", error.message);
+        res.status(500).json({ error: 'Não foi possível deletar todos os logs.', details: error.message });
+    }
+};
+
 // NOVA FUNÇÃO PARA DELETAR RECEPTOR
 export const deleteReceiver = async (req, res) => {
     const { id } = req.params;
