@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import HospitalForm, { HospitalFormData } from '../../components/HospitalForm'; 
-// Ajuste o import '../../components/HospitalForm' para '@/app/components/HospitalForm' 
-// ou o alias correto que você configurou, se tiver.
 
 export default function NewHospitalPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,9 +37,8 @@ export default function NewHospitalPage() {
   };
 
   return (
-    // Container da página estilizado
     <div className="container mx-auto p-4 sm:p-6 md:p-8">
-      <div className="max-w-2xl mx-auto"> {/* Centraliza o conteúdo do formulário */}
+      <div className="max-w-2xl mx-auto"> {}
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-700 mb-8 text-center">
           Adicionar Novo Hospital
         </h1>
