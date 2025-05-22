@@ -11,8 +11,8 @@ app = Flask(__name__)
 
 # --- Constantes e Configurações ---
 MODEL_DIR = os.path.join(os.path.dirname(__file__), 'model')
-MODEL_NAME = 'organ_transport_model.h5' # CONFIRME ESTE NOME
-SCALER_NAME = 'scaler.joblib'          # CONFIRME ESTE NOME
+MODEL_NAME = 'organ_transport_model.h5' # CONFIRME ESTE NOME SE FOR DIFERENTE
+SCALER_NAME = 'scaler.joblib'          # CONFIRME ESTE NOME SE FOR DIFERENTE
 MODEL_PATH = os.path.join(MODEL_DIR, MODEL_NAME)
 SCALER_PATH = os.path.join(MODEL_DIR, SCALER_NAME)
 
@@ -44,10 +44,10 @@ try:
             dummy_data_for_df = [0.0] * num_features # Lista de floats
             dummy_df = pd.DataFrame([dummy_data_for_df], columns=EXPECTED_FEATURE_NAMES)
             
-            dummy_scaled_df = scaler.transform(dummy_df)
-            dummy_scaled_np = dummy_scaled_df.to_numpy() # Keras geralmente espera NumPy
+            # scaler.transform() em um DataFrame retorna um array NumPy
+            dummy_scaled_np = scaler.transform(dummy_df) 
             
-            _ = model.predict(dummy_scaled_np)
+            _ = model.predict(dummy_scaled_np) # A predição em si
             print(">>> Warm-up do modelo concluído com sucesso.")
         except Exception as e_warmup:
             print(f">>> ERRO durante o warm-up do modelo: {e_warmup}")
@@ -67,7 +67,7 @@ def home():
         return "Serviço de ML para Otimização de Transporte de Órgãos está funcionando (modelo e scaler carregados)."
     elif model_load_error:
         return f"Serviço de ML está funcionando, MAS HOUVE ERRO: {model_load_error}", 500
-    else: # Caso improvável se a lógica acima estiver correta
+    else:
         return "Serviço de ML está funcionando, mas o estado do modelo/scaler é desconhecido.", 500
 
 
@@ -109,9 +109,10 @@ def predict():
             # Assegura que os dados de entrada são floats para o DataFrame e scaler
             features_list_float = [float(f) for f in features_list]
             input_df = pd.DataFrame([features_list_float], columns=EXPECTED_FEATURE_NAMES)
-            scaled_features_df = scaler.transform(input_df)
-            # Modelo Keras geralmente espera um array NumPy
-            scaled_features_np = scaled_features_df.to_numpy()
+            
+            # scaler.transform() em um DataFrame Pandas retorna um array NumPy
+            scaled_features_np = scaler.transform(input_df) 
+            
         except ValueError as ve:
             print(f"LOG PREDICT: Erro de valor durante a conversão/preparação dos dados: {ve}")
             return jsonify({"error": f"Erro ao converter features para números ou preparar dados: {str(ve)}"}), 400
@@ -121,15 +122,14 @@ def predict():
         
         preprocess_time = time.time() - preprocess_start_time
         print(f"LOG PREDICT: Features escaladas (formato NumPy): {scaled_features_np}")
+        print(f"LOG PREDICT: Tipo de scaled_features_np: {type(scaled_features_np)}")
+        print(f"LOG PREDICT: Shape de scaled_features_np: {scaled_features_np.shape}")
         print(f"LOG PREDICT: Tempo de pré-processamento: {preprocess_time:.4f}s")
 
         # 2. Predição com o modelo
         model_predict_start_time = time.time()
         try:
-            # tf.config.run_functions_eagerly(True) # Descomente APENAS para debugging de baixo nível no TensorFlow
-            prediction_probabilities = model.predict(scaled_features_np)
-            # tf.config.run_functions_eagerly(False) # Recomentado para voltar ao modo normal
-            
+            prediction_probabilities = model.predict(scaled_features_np) # scaled_features_np já é NumPy
             predicted_class_index = np.argmax(prediction_probabilities, axis=1)[0]
         except Exception as e_predict:
             print(f"LOG PREDICT: Erro na predição do modelo: {e_predict}")
@@ -152,19 +152,16 @@ def predict():
 
         return jsonify({
             "predicted_transport_mode": predicted_transport_mode,
-            "predicted_class_index": int(predicted_class_index), # Converte para int padrão do Python
-            "probabilities": prediction_probabilities.tolist()[0] # Converte array NumPy para lista Python
+            "predicted_class_index": int(predicted_class_index), 
+            "probabilities": prediction_probabilities.tolist()[0] 
         })
 
     except Exception as e:
         print(f"LOG PREDICT: Erro inesperado durante a predição: {e}")
-        # Em produção, pode ser melhor não expor str(e) diretamente
         return jsonify({"error": f"Erro interno inesperado no servidor."}), 500
 
 
 # --- Bloco para execução local (Gunicorn não usa isso diretamente no Render) ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
-    # Para produção com Gunicorn, debug=False é crucial.
-    # Gunicorn lida com múltiplos workers, logging, etc.
     app.run(host='0.0.0.0', port=port, debug=False)
