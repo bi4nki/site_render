@@ -45,9 +45,9 @@ try:
             dummy_df = pd.DataFrame([dummy_data_for_df], columns=EXPECTED_FEATURE_NAMES)
             
             # scaler.transform() em um DataFrame retorna um array NumPy
-            dummy_scaled_np = scaler.transform(dummy_df) 
+            dummy_scaled_np = scaler.transform(dummy_df) # <<< JÁ É NUMPY AQUI
             
-            _ = model.predict(dummy_scaled_np) # A predição em si
+            _ = model.predict(dummy_scaled_np) # Passa o array NumPy diretamente
             print(">>> Warm-up do modelo concluído com sucesso.")
         except Exception as e_warmup:
             print(f">>> ERRO durante o warm-up do modelo: {e_warmup}")
