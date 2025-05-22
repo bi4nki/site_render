@@ -5,7 +5,8 @@ import {
   createAirport, getAirports,
   createDonor, getDonors, deleteDonor,       // Adicionado deleteDonor
   createReceiver, getReceivers, deleteReceiver, // Adicionado deleteReceiver
-  deleteTransportLog, getTransportLogs, deleteAllTransportLogs
+  deleteTransportLog, getTransportLogs, deleteAllTransportLogs,
+  deleteAirport
 } from '../controllers/masterDataController.js';
 
 const router = express.Router();
@@ -23,7 +24,7 @@ router.delete('/hospitals/:id', deleteHospital);
 // Aeroportos
 router.post('/airports', createAirport);
 router.get('/airports', getAirports);
-// Não adicionei delete para airports.
+router.delete('/airports/:id', deleteAirport);
 
 // Doadores
 router.post('/donors', createDonor);
