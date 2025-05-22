@@ -1,15 +1,30 @@
 import { PrismaClient } from '@prisma/client';
-import axios from 'axios'; // Para fazer chamadas HTTP para o ml-service
+import axios from 'axios';
 
 const prisma = new PrismaClient();
 
-// Nomes e ordem das features como o ml-service espera
-// DEVE SER IDÊNTICO AO `EXPECTED_FEATURE_NAMES` no ml-service/app.py
 const ML_EXPECTED_FEATURE_NAMES = [
     "distancia_km", "tempo_isquemia_max_horas", "urgencia_receptor",
     "disponibilidade_voo_comercial_bool", "custo_voo_comercial_estimado",
     "disponibilidade_voo_dedicado_bool", "custo_voo_dedicado_estimado"
 ];
+
+function deg2rad(deg) {
+    return deg * (Math.PI / 180);
+}
+
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Raio da Terra em km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c; // Distância em km
+    return parseFloat(d.toFixed(1)); // Retorna com 1 casa decimal
+}
 
 export const optimizeTransport = async (req, res) => {
     const { donorId, receiverId } = req.body;
@@ -19,62 +34,62 @@ export const optimizeTransport = async (req, res) => {
     }
 
     try {
-        // 1. Buscar dados do Doador e do Órgão doado
         const donor = await prisma.donor.findUnique({
             where: { id: parseInt(donorId) },
-            include: {
-                organ: true,        // Inclui dados do órgão
-                hospital: true,     // Inclui dados do hospital do doador
-            },
+            include: { organ: true, hospital: true },
         });
 
-        // 2. Buscar dados do Receptor
         const receiver = await prisma.receiver.findUnique({
             where: { id: parseInt(receiverId) },
-            include: {
-                organNeeded: true, // Para verificar compatibilidade (não usado no ML diretamente, mas bom ter)
-                hospital: true,    // Inclui dados do hospital do receptor
-            },
+            include: { organNeeded: true, hospital: true },
         });
 
-        if (!donor) {
-            return res.status(404).json({ error: `Doador com id ${donorId} não encontrado.` });
-        }
-        if (!receiver) {
-            return res.status(404).json({ error: `Receptor com id ${receiverId} não encontrado.` });
-        }
-        if (!donor.organ) {
-            return res.status(404).json({ error: `Órgão para o doador ${donorId} não encontrado.` });
-        }
-        // Poderia adicionar checagem se donor.organ.id === receiver.organNeeded.id
+        if (!donor) return res.status(404).json({ error: `Doador com id ${donorId} não encontrado.` });
+        if (!receiver) return res.status(404).json({ error: `Receptor com id ${receiverId} não encontrado.` });
+        if (!donor.organ) return res.status(404).json({ error: `Órgão para o doador ${donorId} não encontrado.` });
+        if (!donor.hospital) return res.status(404).json({ error: `Hospital para o doador ${donorId} não encontrado.` });
+        if (!receiver.hospital) return res.status(404).json({ error: `Hospital para o receptor ${receiverId} não encontrado.` });
 
-        // 3. Preparar Features para o ML Service
-        // Esta é uma SIMULAÇÃO INICIAL. Você precisará refinar como essas features são calculadas.
-        const features = [];
+        // --- Preparar Features para o ML Service ---
 
-        // Feature 1: distancia_km (Simulação MUITO básica - distância em linha reta, ou fixo)
-        // Em um cenário real, você usaria as latitudes/longitudes dos hospitais
-        // e uma API como Google Maps ou calcularia a distância haversine.
-        // Por agora, vamos simular ou usar um valor fixo para teste.
-        // const dist = calcularDistancia(donor.hospital, receiver.hospital); // Função hipotética
-        const distancia_km = 500.0; // VALOR DE TESTE - SUBSTITUA POR CÁLCULO REAL/MELHOR SIMULAÇÃO
+        // 1. distancia_km (Calculada)
+        const distancia_km = getDistanceFromLatLonInKm(
+            donor.hospital.latitude, donor.hospital.longitude,
+            receiver.hospital.latitude, receiver.hospital.longitude
+        );
+        console.log("Backend: Distância calculada (Haversine):", distancia_km, "km");
 
-        // Feature 2: tempo_isquemia_max_horas (do órgão do doador)
+        // 2. tempo_isquemia_max_horas
         const tempo_isquemia_max_horas = donor.organ.maxIschemiaHours;
 
-        // Feature 3: urgencia_receptor
+        // 3. urgencia_receptor
         const urgencia_receptor = receiver.urgencyLevel;
 
-        // Features 4-7: Simulações para disponibilidade e custo de voos
-        // Você pode torná-las mais "inteligentes" depois.
-        const disponibilidade_voo_comercial_bool = 1.0; // 1.0 para true, 0.0 para false
-        const custo_voo_comercial_estimado = 2000.0;
-        const disponibilidade_voo_dedicado_bool = Math.random() > 0.5 ? 1.0 : 0.0; // Aleatório para teste
-        const custo_voo_dedicado_estimado = 10000.0;
+        // 4. & 5. Simulações para voo comercial
+        let disponibilidade_voo_comercial_bool = 0.0;
+        let custo_voo_comercial_estimado = 0.0;
+        if (distancia_km > 200 && Math.random() > 0.15) { // 85% de chance se > 200km
+            disponibilidade_voo_comercial_bool = 1.0;
+            custo_voo_comercial_estimado = parseFloat((500 + (distancia_km * 0.7) + (Math.random() * 500 - 250)).toFixed(2)); // Custo base + por km + variação
+        }
 
-        // Montar o array na ordem ESPERADA PELO ML_EXPECTED_FEATURE_NAMES
-        // Certifique-se de que a ordem aqui corresponde à ordem em ML_EXPECTED_FEATURE_NAMES
-        // e que todos são números (floats ou ints que o ML espera como float)
+        // 6. & 7. Simulações para voo dedicado
+        let disponibilidade_voo_dedicado_bool = 0.0;
+        let custo_voo_dedicado_estimado = 0.0;
+        // Maior chance se urgente e distância considerável, mas menos comum que comercial
+        if (distancia_km > 150 && (urgencia_receptor <= 2 || Math.random() > 0.6)) { 
+            disponibilidade_voo_dedicado_bool = 1.0;
+            custo_voo_dedicado_estimado = parseFloat((2500 + (distancia_km * 3.0) + (Math.random() * 1000 - 500)).toFixed(2));
+        }
+        // Se a distância for muito grande e o tempo de isquemia permitir pouco, força a disponibilidade de dedicado se comercial não estiver
+        if (distancia_km > 1500 && tempo_isquemia_max_horas <= 12 && disponibilidade_voo_comercial_bool === 0.0){
+            disponibilidade_voo_dedicado_bool = 1.0;
+            if(custo_voo_dedicado_estimado === 0.0) { // Recalcula se não foi setado antes
+                 custo_voo_dedicado_estimado = parseFloat((3000 + (distancia_km * 3.0) + (Math.random() * 1000 - 500)).toFixed(2));
+            }
+        }
+
+
         const feature_values_for_ml = [
             distancia_km,
             parseFloat(tempo_isquemia_max_horas),
@@ -87,9 +102,8 @@ export const optimizeTransport = async (req, res) => {
         
         console.log("Backend: Features enviadas para o ML:", feature_values_for_ml);
 
-        // 4. Chamar o ML Service
         if (!process.env.ML_SERVICE_URL) {
-            console.error("ERRO: ML_SERVICE_URL não está definida nas variáveis de ambiente.");
+            console.error("ERRO: ML_SERVICE_URL não está definida.");
             return res.status(500).json({ error: "Configuração do serviço de ML ausente no servidor." });
         }
         
@@ -97,11 +111,12 @@ export const optimizeTransport = async (req, res) => {
         try {
             const mlServiceResponse = await axios.post(
                 `${process.env.ML_SERVICE_URL}/predict`,
-                { features: feature_values_for_ml } // Envia no formato que o ml-service espera
+                { features: feature_values_for_ml }
             );
             mlPrediction = mlServiceResponse.data;
             console.log("Backend: Resposta do ML Service:", mlPrediction);
         } catch (mlError) {
+            // ... (bloco de tratamento de erro do axios como antes) ...
             console.error("Erro ao chamar o ML Service:", mlError.message);
             if (mlError.response) {
                 console.error("ML Service Response Data:", mlError.response.data);
@@ -110,16 +125,16 @@ export const optimizeTransport = async (req, res) => {
                     error: "Erro ao comunicar com o serviço de ML.", 
                     details: mlError.response.data 
                 });
+            } else if (mlError.request) {
+                console.error("ML Service - Nenhuma resposta recebida:", mlError.request);
+                return res.status(500).json({ error: "Serviço de ML não respondeu." });
+            } else {
+                console.error('ML Service - Erro na configuração da requisição:', mlError.message);
+                return res.status(500).json({ error: "Erro ao preparar comunicação com o serviço de ML." });
             }
-            return res.status(500).json({ error: "Erro de comunicação com o serviço de ML." });
+            return res.status(500).json({ error: "Erro desconhecido ao comunicar com o serviço de ML." });
         }
-
-        // 5. (Opcional por agora) Lógica Adicional de Transporte e Custos
-        // Aqui você adicionaria chamadas para Google Maps (distâncias/tempos terrestres)
-        // e simulações/APIs de voos para enriquecer a decisão ou apresentar opções.
-        // Por enquanto, vamos focar na sugestão do ML.
-
-        // 6. Salvar Log da Decisão (Básico)
+        
         let transportLogEntry;
         try {
             transportLogEntry = await prisma.transportLog.create({
@@ -127,25 +142,24 @@ export const optimizeTransport = async (req, res) => {
                     donorId: parseInt(donorId),
                     receiverId: parseInt(receiverId),
                     selectedTransportMode: mlPrediction.predicted_transport_mode || "N/A",
-                    estimatedTimeHours: 0, // Placeholder - seria calculado com mais lógica
-                    status: "PENDING_CONFIRMATION", // Exemplo de status
-                    notes: `Sugestão do ML: ${mlPrediction.predicted_transport_mode}. Probs: ${JSON.stringify(mlPrediction.probabilities)}`,
+                    estimatedTimeHours: 0, 
+                    status: "PENDING_CONFIRMATION",
+                    notes: `ML: ${mlPrediction.predicted_transport_mode}. Probs: ${JSON.stringify(mlPrediction.probabilities)}. Features: ${JSON.stringify(feature_values_for_ml)}`,
                 },
             });
             console.log("Backend: Log de transporte salvo:", transportLogEntry);
         } catch (logError) {
             console.error("Erro ao salvar o log de transporte:", logError.message);
-            // Não falhar a requisição principal por causa do log, mas registrar o erro
         }
         
-        // 7. Retornar a Resposta Consolidada
         res.status(200).json({
             message: "Otimização processada.",
             donorInfo: { id: donor.id, hospital: donor.hospital.name, organ: donor.organ.name },
             receiverInfo: { id: receiver.id, hospital: receiver.hospital.name, urgency: receiver.urgencyLevel },
+            calculatedDistanceKm: distancia_km, // Adicionado para debug/info
+            featuresSentToML: feature_values_for_ml, // Adicionado para debug/info
             mlRecommendation: mlPrediction,
             logId: transportLogEntry ? transportLogEntry.id : null
-            // Adicionar mais detalhes de transporte aqui no futuro
         });
 
     } catch (error) {
@@ -153,14 +167,3 @@ export const optimizeTransport = async (req, res) => {
         res.status(500).json({ error: 'Erro interno no servidor durante a otimização.', details: error.message });
     }
 };
-
-// Função hipotética para cálculo de distância (SIMPLES para exemplo)
-// Em um projeto real, use Haversine ou uma API de mapas.
-// function calcularDistancia(hospitalOrigem, hospitalDestino) {
-//     // Exemplo muito simples baseado em diferença de lat/lon (NÃO PRECISO GEOGRAFICAMENTE)
-//     const latDiff = Math.abs(hospitalOrigem.latitude - hospitalDestino.latitude);
-//     const lonDiff = Math.abs(hospitalOrigem.longitude - hospitalDestino.longitude);
-//     // Fator de conversão aproximado para km (varia com a latitude)
-//     // Esta é uma GRANDE simplificação.
-//     return Math.sqrt(latDiff*latDiff + lonDiff*lonDiff) * 111; 
-// }
