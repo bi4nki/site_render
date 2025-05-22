@@ -17,7 +17,7 @@ interface Receiver {
   urgencyLevel: number;
   registrationDate: string; 
   hospital: HospitalSimple;
-  organNeeded: OrganSimple; // Nome da relação no Prisma é organNeeded
+  organNeeded: OrganSimple;
   createdAt: string;
 }
 
