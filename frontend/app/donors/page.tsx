@@ -3,18 +3,18 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-interface HospitalSimple { // Para exibição na tabela
+interface HospitalSimple { 
   id: number;
   name: string;
 }
-interface OrganSimple { // Para exibição na tabela
+interface OrganSimple { 
   id: number;
   name: string;
 }
 interface Donor {
   id: number;
   bloodType: string;
-  availabilityDateTime: string; // Vem como string ISO do backend
+  availabilityDateTime: string; 
   hospital: HospitalSimple;
   organ: OrganSimple;
   createdAt: string;
