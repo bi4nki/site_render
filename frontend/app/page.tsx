@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Building, Plane, Users, Activity, PlusCircle } from 'lucide-react'; // Ícones Lucide (instalar)
+import { ArrowRight, Building, Plane, Users, Activity, PlusCircle } from 'lucide-react';
 
 // Interface para as estatísticas
 interface DashboardStats {
@@ -12,12 +12,11 @@ interface DashboardStats {
   donorCount: number;
   receiverCount: number;
   transportLogCount: number;
-  recentTransportLogs?: Array<{ // Simplificado para o exemplo
+  recentTransportLogs?: Array<{ 
     id: number;
     selectedTransportMode: string;
     status: string;
     createdAt: string;
-    // Adicionar donor/receiver info se o backend enviar
   }>;
 }
 
@@ -80,7 +79,7 @@ export default function HomePage() {
 
       {stats && !isLoading && !error && (
         <>
-          {/* Seção de Cards de Estatísticas */}
+          {}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             <StatCard title="Hospitais" value={stats.hospitalCount} icon={<Building className="h-8 w-8 text-blue-500" />} colorClass="border-blue-500" />
             <StatCard title="Órgãos (Tipos)" value={stats.organCount} icon={<Activity className="h-8 w-8 text-green-500" />} colorClass="border-green-500" />
@@ -90,7 +89,7 @@ export default function HomePage() {
             <StatCard title="Otimizações Registradas" value={stats.transportLogCount} icon={<Activity className="h-8 w-8 text-purple-500" />} colorClass="border-purple-500" />
           </div>
 
-          {/* Seção de Ações Rápidas */}
+          {}
           <div className="mb-10">
             <h2 className="text-2xl font-semibold text-slate-700 mb-4">Ações Rápidas</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -112,11 +111,11 @@ export default function HomePage() {
                   <ArrowRight className="h-8 w-8" />
                 </div>
               </Link>
-              {/* Adicionar mais links rápidos para Doadores, Receptores, etc. */}
+              {}
             </div>
           </div>
 
-          {/* Opcional: Seção de Últimas Atividades */}
+          {}
           {stats.recentTransportLogs && stats.recentTransportLogs.length > 0 && (
             <div>
               <h2 className="text-2xl font-semibold text-slate-700 mb-4">Últimas Otimizações Registradas</h2>
