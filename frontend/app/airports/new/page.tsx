@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AirportForm, { AirportFormData } from '../../components/AirportForm'; // Ajuste o path
+import AirportForm, { AirportFormData } from '../../components/AirportForm';
 
 export default function NewAirportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,7 +21,7 @@ export default function NewAirportPage() {
 
     const dataToSubmit = {
       ...formData,
-      iataCode: formData.iataCode.toUpperCase(), // IATA codes são geralmente maiúsculos
+      iataCode: formData.iataCode.toUpperCase(),
       latitude: parseFloat(formData.latitude),
       longitude: parseFloat(formData.longitude),
     };
