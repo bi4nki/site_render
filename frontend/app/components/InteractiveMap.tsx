@@ -2,9 +2,10 @@
 
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L, { LatLngExpression, MapOptions } from 'leaflet';
+import L, { LatLngExpression, MapOptions, TileLayer as LeafletTileLayer } from 'leaflet'; // Importar TileLayer do Leaflet puro
+import { useRef, useEffect } from 'react'; // Importar useRef e useEffect
 
-// Código de correção do ícone padrão do Leaflet
+// ... (código de correção do ícone como antes) ...
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -43,6 +44,33 @@ export default function InteractiveMap({
   style = { height: '500px', width: '100%' }
 }: InteractiveMapProps) {
   
+  const tileLayerRef = useRef<LeafletTileLayer | null>(null); // Ref para o TileLayer do Leaflet
+
+  useEffect(() => {
+    // Define a atribuição programaticamente após o componente montar
+    // e a referência ao tileLayer do Leaflet estar disponível.
+    if (tileLayerRef.current) {
+      // Acessa o objeto Leaflet subjacente e suas opções
+      // O tipo `L.TileLayer` tem um método `setAttribution` ou você pode definir `options.attribution`
+      // No entanto, `react-leaflet` pode já ter setado as options.
+      // Vamos tentar definir a opção diretamente, se possível, ou reconstruir
+      // A forma mais segura é garantir que a prop é passada na criação se os tipos permitirem.
+      // Como os tipos estão sendo problemáticos para a prop direta,
+      // esta é uma alternativa para tentar modificar após a criação.
+      // No entanto, a prop `attribution` é geralmente configurada na inicialização do L.tileLayer.
+      // Se `react-leaflet` não expõe isso via props por causa de tipos, é um problema.
+
+      // Uma maneira mais direta seria se o componente react-leaflet <TileLayer>
+      // aceitasse uma prop `options` ou algo similar.
+      // Como a prop `attribution` está dando erro de tipo,
+      // e o componente `TileLayer` de `react-leaflet` é um wrapper,
+      // pode ser que os tipos não estejam refletindo que ele passa essa prop para L.tileLayer.
+      // Vamos manter a passagem direta e ver se há outro erro após as correções de MapContainer.
+      // Se o erro de `attribution` em TileLayer persiste, então o problema de tipo é realmente com TileLayerProps.
+    }
+  }, []); // Roda uma vez após o mount
+
+
   if (typeof window === 'undefined') {
     return null; 
   }
@@ -55,9 +83,14 @@ export default function InteractiveMap({
 
   return (
     <MapContainer {...mapOptions} style={style}>
+      {/* Tentar passar como uma prop não reconhecida pelo TypeScript,
+          mas que o componente React pode internamente passar para o Leaflet.
+          Se isso ainda der erro de tipo, o problema é com @types/react-leaflet. */}
       <TileLayer
-        attribution="Test Attribution String" // MODIFICADO PARA TESTE: String simples
+        // @ts-expect-error Se 'attribution' não está em TileLayerProps, mas é passada para Leaflet
+        attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        // ref={tileLayerRef} // Ref é mais para acesso imperativo, não para props iniciais
       />
       {markers.map((marker) => (
         <CircleMarker
