@@ -1,8 +1,8 @@
 'use client';
 
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, MapContainerProps } from 'react-leaflet'; // Importar MapContainerProps
 import 'leaflet/dist/leaflet.css';
-import L, { LatLngExpression } from 'leaflet'; // <--- IMPORTAR LatLngExpression
+import L, { LatLngExpression, PointExpression } from 'leaflet'; // LatLngExpression é bom, PointExpression pode ser útil para outros
 
 // ... (código de correção do ícone como antes) ...
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -21,11 +21,13 @@ export interface MapMarkerData {
   details?: string;
 }
 
-interface InteractiveMapProps {
+// Usar Partial<MapContainerProps> para props que MapContainer aceita, 
+// e adicionar as nossas personalizadas.
+interface InteractiveMapProps extends Partial<Omit<MapContainerProps, 'children' | 'style'>> {
   markers: MapMarkerData[];
-  center?: LatLngExpression; // <--- USAR LatLngExpression AQUI
-  zoom?: number;
-  style?: React.CSSProperties;
+  initialCenter?: LatLngExpression; // Renomeado para evitar conflito e ser mais explícito
+  initialZoom?: number;           // Renomeado
+  mapStyle?: React.CSSProperties; // Renomeado para evitar conflito com HTML style
 }
 
 const markerColors = {
@@ -36,20 +38,25 @@ const markerColors = {
 
 export default function InteractiveMap({
   markers,
-  center = [-15.788497, -47.879873] as LatLngExpression, // <--- CAST PARA LatLngExpression NO DEFAULT
-  zoom = 4,
-  style = { height: '500px', width: '100%' }
+  initialCenter = [-15.788497, -47.879873] as LatLngExpression,
+  initialZoom = 4,
+  mapStyle = { height: '500px', width: '100%' },
+  ...restOfMapContainerProps // Captura outras props válidas de MapContainer
 }: InteractiveMapProps) {
   
   if (typeof window === 'undefined') {
     return null; 
   }
 
-  // Certifique-se de que 'center' é realmente do tipo LatLngExpression
-  // O cast no default value e na prop type deve ser suficiente.
-
   return (
-    <MapContainer center={center} zoom={zoom} scrollWheelZoom={true} style={style}>
+    // Passar as props renomeadas para as props corretas do MapContainer
+    <MapContainer 
+        center={initialCenter} 
+        zoom={initialZoom} 
+        scrollWheelZoom={restOfMapContainerProps.scrollWheelZoom ?? true} // Usa o default ou o que foi passado
+        style={mapStyle}
+        {...restOfMapContainerProps} // Espalha quaisquer outras props válidas
+    >
       <TileLayer
         attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -57,7 +64,7 @@ export default function InteractiveMap({
       {markers.map((marker) => (
         <CircleMarker
           key={marker.id}
-          center={[marker.latitude, marker.longitude] as LatLngExpression} // <--- CAST AQUI TAMBÉM
+          center={[marker.latitude, marker.longitude] as LatLngExpression}
           pathOptions={{ color: markerColors[marker.type] || 'purple', fillColor: markerColors[marker.type] || 'purple', fillOpacity: 0.7 }}
           radius={8}
         >
