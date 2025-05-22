@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Modelos de Dados Mestres ---
+model Organ {
+  id               Int      @id @default(autoincrement())
+  name             String   @unique // e.g., RIM, CORACAO, FIGADO
+  maxIschemiaHours Int // Tempo máximo em horas que o órgão pode ficar fora do corpo
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  donors          Donor[]   @relation("DonorOrgan")
+  receiversNeeded Receiver[] @relation("ReceiverOrganNeeded")
+}
+
+model Hospital {
+  id              Int      @id @default(autoincrement())
+  name            String
+  address         String
+  city            String
+  state           String
+  latitude        Float
+  longitude       Float
+  transplantTypes String[] // Lista de nomes de órgãos que este hospital pode transplantar
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  donorsFrom   Donor[]    @relation("DonorFromHospital")
+  receiversAt Receiver[] @relation("ReceiverAtHospital")
+}
+
+model Airport {
+  id        Int      @id @default(autoincrement())
+  name      String
+  iataCode  String   @unique
+  city      String
+  state     String
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- Modelos de Doadores e Receptores ---
+model Donor {
+  id                   Int      @id @default(autoincrement())
+  bloodType            String // e.g., A+, O-, B+
+  availabilityDateTime DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  hospitalId Int
+  hospital   Hospital @relation("DonorFromHospital", fields: [hospitalId], references: [id])
+
+  organId Int
+  organ   Organ    @relation("DonorOrgan", fields: [organId], references: [id])
+}
+
+model Receiver {
+  id            Int      @id @default(autoincrement())
+  bloodType     String
+  urgencyLevel  Int // e.g., 1 (mais urgente) a 5 (menos urgente)
+  registrationDate DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  hospitalId Int
+  hospital   Hospital @relation("ReceiverAtHospital", fields: [hospitalId], references: [id])
+
+  organNeededId Int
+  organNeeded   Organ    @relation("ReceiverOrganNeeded", fields: [organNeededId], references: [id])
+}
+
+
+// --- Modelo para Otimização de Transporte (Exemplo) ---
+// Este modelo pode ser mais complexo, dependendo do que você quer armazenar
+// sobre as decisões de transporte.
+model TransportLog {
+  id                      Int      @id @default(autoincrement())
+  donorId                 Int
+  receiverId              Int
+  // donor                 Donor    @relation(fields: [donorId], references: [id]) // Se precisar linkar
+  // receiver              Receiver @relation(fields: [receiverId], references: [id]) // Se precisar linkar
+  
+  selectedTransportMode String   // e.g., "Aereo Comercial", "Aereo Dedicado", "Terrestre"
+  estimatedTimeHours    Float
+  actualTimeHours       Float?
+  status                String   // e.g., "PENDING", "IN_TRANSIT", "COMPLETED", "FAILED"
+  notes                 String?
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
