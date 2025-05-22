@@ -42,6 +42,10 @@ function randomUniform(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+// No optimizationController.js, antes de chamar calcularTempoEstimadoViagemBackend para Aéreo Dedicado:
+console.log("Backend: Feature de disponibilidade_voo_dedicado_bool_feat:", disponibilidade_voo_dedicado_bool_feat);
+const aereoDedicadoCalc = calcularTempoEstimadoViagemBackend(distancia_km_ponta_a_ponta, 2, disponibilidade_voo_dedicado_bool_feat, tempo_isquemia_max_horas);
+
 function calcularTempoEstimadoViagemBackend(distanciaKmOuDistanciaVoo, modal, disponibilidadeBool, tempoIsquemiaMaxHoras) {
     if (!disponibilidadeBool && (modal === 1 || modal === 2) && modal !== 0) { 
         return { tempoHoras: null, detalhes: (modal === 1 ? "Indisponível ou fora do horário de voo comercial." : "Indisponível."), risco: "N/A", isViableIschemia: false };
