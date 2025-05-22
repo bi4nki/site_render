@@ -8,7 +8,7 @@ import L from 'leaflet';
 
 const InteractiveMap = dynamic(() => import('../components/InteractiveMap'), {
   ssr: false, 
-  loading: () => <div className="text-center p-4 animate-pulse text-gray-500">Carregando mapa...</div> // Adicionado estilo ao loading
+  loading: () => <div className="text-center p-4 animate-pulse text-gray-500">Carregando mapa...</div>
 });
 
 interface Hospital {
@@ -88,9 +88,8 @@ export default function HospitalsPage() {
   };
 
   return (
-    // Container principal da página
     <div className="container mx-auto p-4 py-8 sm:p-6 md:p-8 bg-slate-50 min-h-screen">
-      {/* Cabeçalho da Página: Título e Botão Adicionar */}
+      {}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 pb-4 border-b border-slate-300">
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-700 mb-4 sm:mb-0">
           Gerenciamento de Hospitais
@@ -101,12 +100,12 @@ export default function HospitalsPage() {
         </Link>
       </div>
 
-      {/* Seção do Mapa */}
+      {}
       <div className="mb-10 bg-white shadow-xl rounded-xl overflow-hidden border border-slate-200">
         <h2 className="text-xl font-semibold p-5 bg-slate-100 border-b border-slate-200 text-slate-700">
             Localização dos Hospitais Cadastrados
         </h2>
-        <div className="h-[450px] md:h-[550px] w-full"> {/* Altura definida para o mapa */}
+        <div className="h-[450px] md:h-[550px] w-full"> {}
             { typeof window !== 'undefined' && backendUrl && 
                 <InteractiveMap 
                     markers={mapMarkers} 
@@ -120,11 +119,11 @@ export default function HospitalsPage() {
         </div>
       </div>
 
-      {/* Mensagens de Loading e Erro para a Tabela */}
+      {}
       {isLoading && <div className="text-center text-slate-600 py-6 text-lg">Carregando lista de hospitais...</div>}
       {error && !isLoading && <div className="text-center text-red-700 font-semibold p-4 bg-red-100 border border-red-300 rounded-lg mt-4 shadow-sm">Erro ao carregar dados: {error}</div>}
       
-      {/* Tabela de Hospitais */}
+      {}
       {!isLoading && !error && hospitals.length === 0 && (
         <div className="text-center text-slate-500 mt-6 py-6 bg-white p-8 rounded-lg shadow-md">
             Nenhum hospital cadastrado. 
@@ -160,11 +159,7 @@ export default function HospitalsPage() {
                       : <span className="italic text-slate-400">Nenhum tipo</span>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {/* Futuro Link para Edição:
-                    <Link href={`/hospitals/edit/${hospital.id}`} className="text-indigo-600 hover:text-indigo-800 mr-4 transition duration-150 ease-in-out">
-                        Editar
-                    </Link>
-                    */}
+                    {}
                     <button 
                       onClick={() => handleDelete(hospital.id)} 
                       className="text-red-500 hover:text-red-700 transition duration-150 ease-in-out font-semibold focus:outline-none hover:underline"
