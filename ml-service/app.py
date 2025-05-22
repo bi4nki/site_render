@@ -11,19 +11,17 @@ app = Flask(__name__)
 
 # --- Constantes e Configurações ---
 MODEL_DIR = os.path.join(os.path.dirname(__file__), 'model')
-TFLITE_MODEL_NAME = 'organ_transport_model_v2.tflite' # ATUALIZADO para V2
-SCALER_NAME = 'scaler_v2.joblib'                     # ATUALIZADO para V2
+TFLITE_MODEL_NAME = 'organ_transport_model_v2.tflite' 
+SCALER_NAME = 'scaler_v2.joblib'                     
 TFLITE_MODEL_PATH = os.path.join(MODEL_DIR, TFLITE_MODEL_NAME)
 SCALER_PATH = os.path.join(MODEL_DIR, SCALER_NAME)
 
-# Nomes e ordem das 6 features como foram usadas para treinar o scaler e o modelo V2
 EXPECTED_FEATURE_NAMES = [
     "distancia_km", "tempo_isquemia_max_horas", "urgencia_receptor",
     "disponibilidade_voo_comercial_bool", 
-    "horario_compativel_voo_comercial_bool", # NOVA FEATURE
+    "horario_compativel_voo_comercial_bool", 
     "disponibilidade_voo_dedicado_bool"
 ]
-# Nomes das classes de saída do modelo, na ordem correta
 CLASS_NAMES = ["Terrestre", "Aereo Comercial", "Aereo Dedicado"] 
 
 # --- Carregamento do Modelo TFLite e Scaler ---
@@ -45,11 +43,10 @@ try:
         scaler = joblib.load(SCALER_PATH)
         print(f">>> Modelo TFLite '{TFLITE_MODEL_PATH}' e scaler '{SCALER_PATH}' carregados com sucesso!")
 
-        # Warm-up do Modelo TFLite V2
         print(">>> Iniciando warm-up do modelo TFLite V2...")
         try:
-            num_features = len(EXPECTED_FEATURE_NAMES) # Deve ser 6
-            if num_features != input_details[0]['shape'][-1]: # Checagem extra
+            num_features = len(EXPECTED_FEATURE_NAMES) 
+            if num_features != input_details[0]['shape'][-1]: 
                 raise ValueError(f"Warm-up: Incompatibilidade de features. Esperado no modelo: {input_details[0]['shape'][-1]}, Definido em EXPECTED_FEATURE_NAMES: {num_features}")
 
             dummy_data_for_df = [0.0] * num_features
@@ -64,7 +61,7 @@ try:
             _ = interpreter.get_tensor(output_details[0]['index'])
             print(">>> Warm-up do modelo TFLite V2 concluído com sucesso.")
         except Exception as e_warmup:
-            model_load_error = f"ERRO durante o warm-up do modelo TFLite V2: {e_warmup}" # Atribui erro se warm-up falhar
+            model_load_error = f"ERRO durante o warm-up do modelo TFLite V2: {e_warmup}" 
             print(f">>> {model_load_error}")
     else:
         model_load_error = f"Arquivo de modelo TFLite ({TFLITE_MODEL_PATH}) ou scaler ({SCALER_PATH}) não encontrado."
@@ -100,7 +97,7 @@ def predict():
         error_msg = model_load_error or "Modelo TFLite V2 ou scaler não está carregado."
         print(f"LOG PREDICT (TFLite V2): Tentativa de predição falhou - {error_msg}")
         return jsonify({"error": error_msg + " Verifique os logs de inicialização."}), 500
-    if not input_details or not output_details: # Checagem adicional
+    if not input_details or not output_details:
         print(f"LOG PREDICT (TFLite V2): Detalhes de input/output do modelo TFLite não inicializados.")
         return jsonify({"error": "Detalhes do modelo TFLite não inicializados. Verifique os logs de inicialização."}), 500
 
@@ -131,10 +128,10 @@ def predict():
             input_dtype = input_details[0]['dtype']
             input_data_for_tflite = scaled_features_np.astype(input_dtype)
 
-        except ValueError as ve: # ... (tratamento de erro como antes) ...
+        except ValueError as ve:
             print(f"LOG PREDICT (TFLite V2): Erro de valor durante a conversão/preparação dos dados: {ve}")
             return jsonify({"error": f"Erro ao converter features para números ou preparar dados: {str(ve)}"}), 400
-        except Exception as e_scale: # ... (tratamento de erro como antes) ...
+        except Exception as e_scale: 
             print(f"LOG PREDICT (TFLite V2): Erro no scaling ou preparação dos dados: {e_scale}")
             return jsonify({"error": f"Erro ao aplicar o scaler ou preparar dados: {str(e_scale)}"}), 400
         
@@ -148,7 +145,7 @@ def predict():
             interpreter.invoke()
             prediction_probabilities = interpreter.get_tensor(output_details[0]['index'])
             predicted_class_index = np.argmax(prediction_probabilities, axis=1)[0]
-        except Exception as e_predict: # ... (tratamento de erro como antes) ...
+        except Exception as e_predict:
             print(f"LOG PREDICT (TFLite V2): Erro na predição do modelo TFLite: {e_predict}")
             return jsonify({"error": f"Erro na predição com TFLite: {str(e_predict)}"}), 500
         
@@ -159,7 +156,7 @@ def predict():
         
         if 0 <= predicted_class_index < len(CLASS_NAMES):
             predicted_transport_mode = CLASS_NAMES[predicted_class_index]
-        else: # ... (fallback como antes) ...
+        else: 
             predicted_transport_mode = "Classe Desconhecida"
             print(f"LOG PREDICT (TFLite V2): Índice de classe previsto ({predicted_class_index}) fora do alcance.")
 
@@ -172,7 +169,7 @@ def predict():
             "probabilities": prediction_probabilities.tolist()[0]
         })
 
-    except Exception as e: # ... (tratamento de erro geral como antes) ...
+    except Exception as e:
         print(f"LOG PREDICT (TFLite V2): Erro inesperado GERAL: {e}")
         return jsonify({"error": "Erro interno inesperado no servidor."}), 500
 
