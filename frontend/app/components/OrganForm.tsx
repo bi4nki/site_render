@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export interface OrganFormData {
   name: string;
-  maxIschemiaHours: string; // Input é string, converter para número ao enviar
+  maxIschemiaHours: string;
 }
 
 interface OrganFormProps {
