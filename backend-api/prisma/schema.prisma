@@ -68,7 +68,7 @@ model Donor {
 model Receiver {
   id            Int      @id @default(autoincrement())
   bloodType     String
-  urgencyLevel  Int // e.g., 1 (mais urgente) a 5 (menos urgente)
+  urgencyLevel  Int 
   registrationDate DateTime @default(now())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -87,10 +87,10 @@ model TransportLog {
   // donor                 Donor    @relation(fields: [donorId], references: [id]) 
   // receiver              Receiver @relation(fields: [receiverId], references: [id])
   
-  selectedTransportMode String   // e.g., "Aereo Comercial", "Aereo Dedicado", "Terrestre"
+  selectedTransportMode String 
   estimatedTimeHours    Float
   actualTimeHours       Float?
-  status                String   // e.g., "PENDING", "IN_TRANSIT", "COMPLETED", "FAILED"
+  status                String 
   notes                 String?
   
   createdAt             DateTime @default(now())
