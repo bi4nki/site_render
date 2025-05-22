@@ -35,25 +35,23 @@ export const getOrgans = async (req, res) => {
 export const createHospital = async (req, res) => {
   try {
     const { name, address, city, state, latitude, longitude, transplantTypes } = req.body;
-    if (!name || !city || latitude === undefined || longitude === undefined) { // Validação básica
+    if (!name || !city || latitude === undefined || longitude === undefined) {
         return res.status(400).json({ error: 'Campos obrigatórios (name, city, latitude, longitude) faltando para hospital.' });
     }
     const hospital = await prisma.hospital.create({
       data: {
         name,
-        address: address || "", // Endereço opcional, mas string vazia se não fornecido
+        address: address || "",
         city,
-        state: state || "",   // Estado opcional
+        state: state || "",
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
-        transplantTypes: transplantTypes || [], // Lista vazia se não fornecido
+        transplantTypes: transplantTypes || [],
       },
     });
     res.status(201).json(hospital);
   } catch (error) {
     console.error("Erro ao criar hospital:", error.message);
-    // Checar se é um erro de constraint única (ex: se você adicionar uma)
-    // if (error.code === 'P2002') { ... }
     res.status(500).json({ error: 'Não foi possível criar o hospital.', details: error.message });
   }
 };
@@ -68,38 +66,32 @@ export const getHospitals = async (req, res) => {
   }
 };
 
-// NOVA FUNÇÃO PARA DELETAR HOSPITAL
 export const deleteHospital = async (req, res) => {
     const { id } = req.params;
     try {
-        // Antes de deletar um hospital, você pode precisar verificar/deletar
-        // registros dependentes (Doadores, Receptores) se houver constraints
-        // de chave estrangeira que impeçam a deleção em cascata ou causem erro.
-        // Para simplicidade aqui, vamos assumir que ou não há dependentes
-        // ou o DB está configurado para deleção em cascata (onDelete: Cascade no schema Prisma).
-        // Se você não configurou onDelete: Cascade e há dependentes, esta operação falhará.
-
+        // Tentativa de deletar o hospital. Se falhar devido a FK, o catch lidará.
         const hospital = await prisma.hospital.delete({
             where: { id: parseInt(id) },
         });
         res.status(200).json({ message: `Hospital com id ${id} deletado com sucesso.`, hospital });
     } catch (error) {
-        if (error.code === 'P2025') { // Prisma: "Record to delete does not exist."
+        if (error.code === 'P2025') { 
             return res.status(404).json({ error: `Hospital com id ${id} não encontrado.` });
         }
-        // Prisma P2003: Foreign key constraint failed on the field: `...`
-        // Isso acontece se o hospital ainda está referenciado por doadores/receptores e não há onDelete: Cascade.
-        if (error.code === 'P2003') {
-             console.error("Erro ao deletar hospital (foreign key constraint):", error.message);
-             return res.status(409).json({ error: `Não foi possível deletar o hospital com id ${id} pois ele está sendo referenciado por outros registros (Doadores/Receptores). Remova as referências primeiro.`, details: error.meta?.field_name || error.message  });
+        if (error.code === 'P2003') { 
+             console.error("Erro ao deletar hospital (foreign key constraint):", error.message, error.meta);
+             return res.status(409).json({ 
+                 error: `Não foi possível deletar o hospital com id ${id} pois ele está sendo referenciado por outros registros (Doadores/Receptores). Remova as referências primeiro.`, 
+                 details: `Constraint violada no campo: ${error.meta?.field_name || 'desconhecido'}` 
+            });
         }
         console.error("Erro ao deletar hospital:", error.message);
         res.status(500).json({ error: 'Não foi possível deletar o hospital.', details: error.message });
     }
 };
 
-
 // --- AEROPORTOS ---
+// (Mantido como antes, sem delete por enquanto para focar)
 export const createAirport = async (req, res) => {
   try {
     const { name, iataCode, city, state, latitude, longitude } = req.body;
@@ -107,14 +99,7 @@ export const createAirport = async (req, res) => {
         return res.status(400).json({ error: 'Campos obrigatórios faltando para aeroporto.' });
     }
     const airport = await prisma.airport.create({
-      data: {
-        name,
-        iataCode,
-        city,
-        state: state || "",
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-      },
+      data: { name, iataCode, city, state: state || "", latitude: parseFloat(latitude), longitude: parseFloat(longitude) },
     });
     res.status(201).json(airport);
   } catch (error) {
@@ -125,7 +110,6 @@ export const createAirport = async (req, res) => {
     res.status(500).json({ error: 'Não foi possível criar o aeroporto.', details: error.message });
   }
 };
-
 export const getAirports = async (req, res) => {
   try {
     const airports = await prisma.airport.findMany();
@@ -135,7 +119,6 @@ export const getAirports = async (req, res) => {
     res.status(500).json({ error: 'Não foi possível buscar os aeroportos.', details: error.message });
   }
 };
-
 
 // --- DOADORES ---
 export const createDonor = async (req, res) => {
@@ -171,6 +154,31 @@ export const getDonors = async (req, res) => {
     }
 };
 
+// NOVA FUNÇÃO PARA DELETAR DOADOR
+export const deleteDonor = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Antes de deletar um doador, verificar se ele está em algum TransportLog
+        const relatedLogs = await prisma.transportLog.count({
+            where: { donorId: parseInt(id) }
+        });
+        if (relatedLogs > 0) {
+            return res.status(409).json({ error: `Não é possível deletar o doador com id ${id} pois ele está referenciado em ${relatedLogs} log(s) de transporte. Remova as referências primeiro ou delete os logs.` });
+        }
+
+        const donor = await prisma.donor.delete({
+            where: { id: parseInt(id) },
+        });
+        res.status(200).json({ message: `Doador com id ${id} deletado com sucesso.`, donor });
+    } catch (error) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({ error: `Doador com id ${id} não encontrado.` });
+        }
+        console.error("Erro ao deletar doador:", error.message);
+        res.status(500).json({ error: 'Não foi possível deletar o doador.', details: error.message });
+    }
+};
+
 // --- RECEPTORES ---
 export const createReceiver = async (req, res) => {
     try {
@@ -203,5 +211,30 @@ export const getReceivers = async (req, res) => {
     } catch (error) {
         console.error("Erro ao buscar receptores:", error.message);
         res.status(500).json({ error: 'Não foi possível buscar os receptores.', details: error.message });
+    }
+};
+
+// NOVA FUNÇÃO PARA DELETAR RECEPTOR
+export const deleteReceiver = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Antes de deletar um receptor, verificar se ele está em algum TransportLog
+        const relatedLogs = await prisma.transportLog.count({
+            where: { receiverId: parseInt(id) }
+        });
+        if (relatedLogs > 0) {
+            return res.status(409).json({ error: `Não é possível deletar o receptor com id ${id} pois ele está referenciado em ${relatedLogs} log(s) de transporte. Remova as referências primeiro ou delete os logs.` });
+        }
+
+        const receiver = await prisma.receiver.delete({
+            where: { id: parseInt(id) },
+        });
+        res.status(200).json({ message: `Receptor com id ${id} deletado com sucesso.`, receiver });
+    } catch (error) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({ error: `Receptor com id ${id} não encontrado.` });
+        }
+        console.error("Erro ao deletar receptor:", error.message);
+        res.status(500).json({ error: 'Não foi possível deletar o receptor.', details: error.message });
     }
 };
