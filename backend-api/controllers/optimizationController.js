@@ -37,14 +37,9 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     return parseFloat(d.toFixed(1));
 }
 
-// Função randomUniform para JavaScript
 function randomUniform(min, max) {
     return Math.random() * (max - min) + min;
 }
-
-// No optimizationController.js, antes de chamar calcularTempoEstimadoViagemBackend para Aéreo Dedicado:
-console.log("Backend: Feature de disponibilidade_voo_dedicado_bool_feat:", disponibilidade_voo_dedicado_bool_feat);
-const aereoDedicadoCalc = calcularTempoEstimadoViagemBackend(distancia_km_ponta_a_ponta, 2, disponibilidade_voo_dedicado_bool_feat, tempo_isquemia_max_horas);
 
 function calcularTempoEstimadoViagemBackend(distanciaKmOuDistanciaVoo, modal, disponibilidadeBool, tempoIsquemiaMaxHoras) {
     if (!disponibilidadeBool && (modal === 1 || modal === 2) && modal !== 0) { 
@@ -130,7 +125,6 @@ export const optimizeTransport = async (req, res) => {
         }
         
         const horario_atual_simulado_backend = Math.floor(Math.random() * 24);
-        // CORREÇÃO APLICADA AQUI:
         const tempo_preparacao_ate_decolagem_comercial_backend = randomUniform(2,4); 
         const horario_decolagem_estimado_backend = (horario_atual_simulado_backend + tempo_preparacao_ate_decolagem_comercial_backend) % 24;
         
@@ -143,12 +137,15 @@ export const optimizeTransport = async (req, res) => {
             }
         }
         
-        let disponibilidade_voo_dedicado_bool_feat = 0.0;
+        let disponibilidade_voo_dedicado_bool_feat = 0.0; // Definição da variável
         if ( (distancia_km_ponta_a_ponta > 150 && urgencia_receptor <= 2 && Math.random() > 0.3) ||
              (distancia_km_ponta_a_ponta > 600 && disponibilidade_voo_comercial_bool_feat === 0.0 && horario_compativel_voo_comercial_bool_feat === 0.0 && Math.random() > 0.2) ||
              (tempo_isquemia_max_horas <= 6 && distancia_km_ponta_a_ponta > 400 && Math.random() > 0.25) ) {
             disponibilidade_voo_dedicado_bool_feat = 1.0;
         }
+
+        // AGORA O CONSOLE.LOG ESTÁ NO LUGAR CERTO (APÓS A DEFINIÇÃO DA VARIÁVEL)
+        console.log("Backend: Feature de disponibilidade_voo_dedicado_bool_feat (para ML):", disponibilidade_voo_dedicado_bool_feat);
 
         const feature_values_for_ml = [
             distancia_km_ponta_a_ponta, 
@@ -187,6 +184,7 @@ export const optimizeTransport = async (req, res) => {
                 console.error('ML Service - Erro na configuração da requisição:', mlError.message);
                 return res.status(500).json({ error: "Erro ao preparar comunicação com o serviço de ML." });
             }
+            // Esta linha não será alcançada devido aos returns acima, mas é bom ter um fallback.
             return res.status(500).json({ error: "Erro desconhecido ao comunicar com o serviço de ML." });
         }
         
@@ -219,11 +217,13 @@ export const optimizeTransport = async (req, res) => {
         } else { 
              let detailMsg = "Indisponível.";
              if (disponibilidade_voo_comercial_bool_feat === 1.0 && horario_compativel_voo_comercial_bool_feat === 0.0) {
-                detailMsg = "Disponível, mas fora do horário compatível de voo.";
+                detailMsg = "Disponível (geral), mas fora do horário compatível de voo simulado.";
              }
             transportOptions.push({ mode: "Aereo Comercial", details: detailMsg, riskLevel: "N/A", isViableIschemia: false, isRecommendedByML: false });
         }
-
+        
+        // CONSOLE.LOG CORRIGIDO E MOVIDO AQUI, ANTES DE USAR A VARIÁVEL PARA CALCULAR TEMPO
+        console.log("Backend: Valor de disponibilidade_voo_dedicado_bool_feat (para cálculo de tempo):", disponibilidade_voo_dedicado_bool_feat);
         const aereoDedicadoCalc = calcularTempoEstimadoViagemBackend(distancia_km_ponta_a_ponta, 2, disponibilidade_voo_dedicado_bool_feat, tempo_isquemia_max_horas);
          if (aereoDedicadoCalc.tempoHoras !== null) {
             transportOptions.push({
@@ -236,7 +236,7 @@ export const optimizeTransport = async (req, res) => {
             });
             if (aereoDedicadoCalc.isViableIschemia) algumaOpcaoViavelEncontrada = true;
         } else { 
-            transportOptions.push({ mode: "Aereo Dedicado", details: "Indisponível.", riskLevel: "N/A", isViableIschemia: false, isRecommendedByML: false });
+            transportOptions.push({ mode: "Aereo Dedicado", details: "Indisponível (simulado).", riskLevel: "N/A", isViableIschemia: false, isRecommendedByML: false });
         }
         
         let overallRiskAssessment = "Verificar opções individuais.";
