@@ -130,9 +130,9 @@ export const optimizeTransport = async (req, res) => {
 
         // 4. disponibilidade_voo_comercial_bool (Feature para ML)
         let disponibilidade_voo_comercial_bool_feat = 0.0;
-        if (distancia_km_ponta_a_ponta > 300 && Math.random() > (0.2 if distancia_km_ponta_a_ponta < 1000 else 0.1)) {
-            disponibilidade_voo_comercial_bool_feat = 1.0;
-        }
+        if (distancia_km_ponta_a_ponta > 300 && Math.random() > (distancia_km_ponta_a_ponta < 1000 ? 0.2 : 0.1)) {
+                disponibilidade_voo_comercial_bool_feat = 1.0;
+            }
 
         // 5. horario_compativel_voo_comercial_bool (Feature para ML)
         const horario_atual_simulado_backend = Math.floor(Math.random() * 24);
