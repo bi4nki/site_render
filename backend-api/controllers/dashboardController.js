@@ -1,4 +1,3 @@
-// backend-api/controllers/dashboardController.js
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
@@ -7,19 +6,16 @@ export const getDashboardStats = async (req, res) => {
         const hospitalCount = await prisma.hospital.count();
         const organCount = await prisma.organ.count();
         const airportCount = await prisma.airport.count();
-        const donorCount = await prisma.donor.count(); // Poderia adicionar filtros aqui, ex: status 'ativo'
-        const receiverCount = await prisma.receiver.count(); // Poderia adicionar filtros aqui
+        const donorCount = await prisma.donor.count();
+        const receiverCount = await prisma.receiver.count();
         const transportLogCount = await prisma.transportLog.count();
 
-        // Opcional: buscar alguns dos últimos logs de transporte
         const recentTransportLogs = await prisma.transportLog.findMany({
-            take: 3, // Pega os 3 mais recentes
+            take: 3, 
             orderBy: {
                 createdAt: 'desc',
             },
-            include: { // Incluir nomes em vez de apenas IDs, se possível e seu schema permitir
-                // donor: { select: { id: true, organ: { select: { name: true } } } },
-                // receiver: { select: { id: true, hospital: { select: { name: true } } } }
+            include: {
             }
         });
 
