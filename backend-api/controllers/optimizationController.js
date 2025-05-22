@@ -3,23 +3,20 @@ import axios from 'axios';
 
 const prisma = new PrismaClient();
 
-// ATUALIZADO: Nomes e ordem das 6 features como o ml-service V2 espera
 const ML_EXPECTED_FEATURE_NAMES_V2 = [
     "distancia_km", "tempo_isquemia_max_horas", "urgencia_receptor",
     "disponibilidade_voo_comercial_bool",
-    "horario_compativel_voo_comercial_bool", // Nova feature
+    "horario_compativel_voo_comercial_bool",
     "disponibilidade_voo_dedicado_bool"
 ];
 
-// Constantes para Estimativa de Tempo (horas) do Backend
 const VELOCIDADE_TERRESTRE_KMH_BACKEND = 80;
 const VELOCIDADE_AEREO_COMERCIAL_KMH_BACKEND = 800;
 const VELOCIDADE_AEREO_DEDICADO_KMH_BACKEND = 700;
-const TEMPO_SOLO_AEROPORTOS_COMERCIAL_HORAS_BACKEND = 1.0;
-const TEMPO_SOLO_AEROPORTOS_DEDICADO_HORAS_BACKEND = 0.75;
-const TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND = 1.2; // Ex: 1h para cada trecho (origem + destino)
+const TEMPO_SOLO_AEROPORTOS_COMERCIAL_HORAS_BACKEND = 3.0;
+const TEMPO_SOLO_AEROPORTOS_DEDICADO_HORAS_BACKEND = 1.5;
+const TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND = 2.0; 
 
-// Horários de "pico" para voos comerciais simulados (0-23h) - Usado na simulação de disponibilidade
 const HORARIO_PICO_VOO_INICIO_BACKEND = 6; 
 const HORARIO_PICO_VOO_FIM_BACKEND = 22;   
 
@@ -40,9 +37,13 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     return parseFloat(d.toFixed(1));
 }
 
+// Função randomUniform para JavaScript
+function randomUniform(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
 function calcularTempoEstimadoViagemBackend(distanciaKmOuDistanciaVoo, modal, disponibilidadeBool, tempoIsquemiaMaxHoras) {
-    // Para modais aéreos, disponibilidadeBool combina disponibilidade geral E horário compatível
-    if (!disponibilidadeBool && (modal === 1 || modal === 2) && modal !== 0) { // Terrestre sempre "disponível" em termos de 'disponibilidadeBool' aqui
+    if (!disponibilidadeBool && (modal === 1 || modal === 2) && modal !== 0) { 
         return { tempoHoras: null, detalhes: (modal === 1 ? "Indisponível ou fora do horário de voo comercial." : "Indisponível."), risco: "N/A", isViableIschemia: false };
     }
 
@@ -51,16 +52,16 @@ function calcularTempoEstimadoViagemBackend(distanciaKmOuDistanciaVoo, modal, di
     let risco = "Baixo";
 
     switch (modal) {
-        case 0: // Terrestre
+        case 0: 
             tempoViagemHoras = distanciaKmOuDistanciaVoo / VELOCIDADE_TERRESTRE_KMH_BACKEND;
             detalhes = `Distância: ${distanciaKmOuDistanciaVoo.toFixed(1)}km. Velocidade média: ${VELOCIDADE_TERRESTRE_KMH_BACKEND}km/h.`;
             break;
-        case 1: // Aéreo Comercial
+        case 1: 
             const tempoVooComercial = distanciaKmOuDistanciaVoo / VELOCIDADE_AEREO_COMERCIAL_KMH_BACKEND;
             tempoViagemHoras = TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND + TEMPO_SOLO_AEROPORTOS_COMERCIAL_HORAS_BACKEND + tempoVooComercial;
             detalhes = `Desloc. terrestre aeroportos (total): ${TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND}h. Tempo solo aeroportos (total): ${TEMPO_SOLO_AEROPORTOS_COMERCIAL_HORAS_BACKEND}h. Voo (${distanciaKmOuDistanciaVoo.toFixed(1)}km @ ${VELOCIDADE_AEREO_COMERCIAL_KMH_BACKEND}km/h): ${tempoVooComercial.toFixed(2)}h.`;
             break;
-        case 2: // Aéreo Dedicado
+        case 2: 
             const tempoVooDedicado = distanciaKmOuDistanciaVoo / VELOCIDADE_AEREO_DEDICADO_KMH_BACKEND;
             tempoViagemHoras = TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND + TEMPO_SOLO_AEROPORTOS_DEDICADO_HORAS_BACKEND + tempoVooDedicado;
             detalhes = `Desloc. terrestre aeroportos (total): ${TEMPO_DESLOC_HOSP_AEROPORTOS_TOTAL_SIMULADO_BACKEND}h. Tempo solo aeroportos (total): ${TEMPO_SOLO_AEROPORTOS_DEDICADO_HORAS_BACKEND}h. Voo (${distanciaKmOuDistanciaVoo.toFixed(1)}km @ ${VELOCIDADE_AEREO_DEDICADO_KMH_BACKEND}km/h): ${tempoVooDedicado.toFixed(2)}h.`;
@@ -111,32 +112,22 @@ export const optimizeTransport = async (req, res) => {
         if (!donor.organ) return res.status(404).json({ error: `Órgão para o doador ${donorId} não encontrado.` });
         if (!donor.hospital) return res.status(404).json({ error: `Hospital para o doador ${donorId} não encontrado.` });
         if (!receiver.hospital) return res.status(404).json({ error: `Hospital para o receptor ${receiverId} não encontrado.` });
-
-        // --- Preparar Features para o ML Service (6 features) ---
-
-        // 1. distancia_km (Calculada entre hospitais)
-        // Para o ML, esta é a distância principal. Para cálculos de tempo aéreo, pode ser a mesma.
+        
         const distancia_km_ponta_a_ponta = getDistanceFromLatLonInKm(
             donor.hospital.latitude, donor.hospital.longitude,
             receiver.hospital.latitude, receiver.hospital.longitude
         );
-        console.log("Backend: Distância calculada (Haversine):", distancia_km_ponta_a_ponta, "km");
-
-        // 2. tempo_isquemia_max_horas
         const tempo_isquemia_max_horas = donor.organ.maxIschemiaHours;
-
-        // 3. urgencia_receptor
         const urgencia_receptor = receiver.urgencyLevel;
-
-        // 4. disponibilidade_voo_comercial_bool (Feature para ML)
+        
         let disponibilidade_voo_comercial_bool_feat = 0.0;
         if (distancia_km_ponta_a_ponta > 300 && Math.random() > (distancia_km_ponta_a_ponta < 1000 ? 0.2 : 0.1)) {
-                disponibilidade_voo_comercial_bool_feat = 1.0;
-            }
-
-        // 5. horario_compativel_voo_comercial_bool (Feature para ML)
+            disponibilidade_voo_comercial_bool_feat = 1.0;
+        }
+        
         const horario_atual_simulado_backend = Math.floor(Math.random() * 24);
-        const tempo_preparacao_ate_decolagem_comercial_backend = random.uniform(2,4); // Simula tempo para chegar ao aeroporto e embarcar
+        // CORREÇÃO APLICADA AQUI:
+        const tempo_preparacao_ate_decolagem_comercial_backend = randomUniform(2,4); 
         const horario_decolagem_estimado_backend = (horario_atual_simulado_backend + tempo_preparacao_ate_decolagem_comercial_backend) % 24;
         
         let horario_compativel_voo_comercial_bool_feat = 0.0;
@@ -148,7 +139,6 @@ export const optimizeTransport = async (req, res) => {
             }
         }
         
-        // 6. disponibilidade_voo_dedicado_bool (Feature para ML)
         let disponibilidade_voo_dedicado_bool_feat = 0.0;
         if ( (distancia_km_ponta_a_ponta > 150 && urgencia_receptor <= 2 && Math.random() > 0.3) ||
              (distancia_km_ponta_a_ponta > 600 && disponibilidade_voo_comercial_bool_feat === 0.0 && horario_compativel_voo_comercial_bool_feat === 0.0 && Math.random() > 0.2) ||
@@ -157,7 +147,7 @@ export const optimizeTransport = async (req, res) => {
         }
 
         const feature_values_for_ml = [
-            distancia_km_ponta_a_ponta, // Usar a distância total para o modelo
+            distancia_km_ponta_a_ponta, 
             parseFloat(tempo_isquemia_max_horas),
             parseFloat(urgencia_receptor),
             disponibilidade_voo_comercial_bool_feat,
@@ -196,11 +186,9 @@ export const optimizeTransport = async (req, res) => {
             return res.status(500).json({ error: "Erro desconhecido ao comunicar com o serviço de ML." });
         }
         
-        // --- Calcular detalhes de transporte para a resposta ---
         const transportOptions = [];
         let algumaOpcaoViavelEncontrada = false;
 
-        // Terrestre (usa distancia_km_ponta_a_ponta)
         const terrestreCalc = calcularTempoEstimadoViagemBackend(distancia_km_ponta_a_ponta, 0, 1.0, tempo_isquemia_max_horas);
         transportOptions.push({
             mode: "Terrestre",
@@ -212,7 +200,6 @@ export const optimizeTransport = async (req, res) => {
         });
         if (terrestreCalc.isViableIschemia) algumaOpcaoViavelEncontrada = true;
 
-        // Aéreo Comercial (usa distancia_km_ponta_a_ponta como distância de voo para o cálculo de tempo)
         const dispRealComercialParaCalculoTempo = disponibilidade_voo_comercial_bool_feat === 1.0 && horario_compativel_voo_comercial_bool_feat === 1.0;
         const aereoComercialCalc = calcularTempoEstimadoViagemBackend(distancia_km_ponta_a_ponta, 1, dispRealComercialParaCalculoTempo, tempo_isquemia_max_horas);
         if (aereoComercialCalc.tempoHoras !== null) {
@@ -225,7 +212,7 @@ export const optimizeTransport = async (req, res) => {
                 isRecommendedByML: mlPrediction.predicted_transport_mode === "Aereo Comercial"
             });
             if (aereoComercialCalc.isViableIschemia) algumaOpcaoViavelEncontrada = true;
-        } else { // Se tempoHoras for null, significa que não estava disponível ou houve erro de cálculo de horário
+        } else { 
              let detailMsg = "Indisponível.";
              if (disponibilidade_voo_comercial_bool_feat === 1.0 && horario_compativel_voo_comercial_bool_feat === 0.0) {
                 detailMsg = "Disponível, mas fora do horário compatível de voo.";
@@ -233,9 +220,8 @@ export const optimizeTransport = async (req, res) => {
             transportOptions.push({ mode: "Aereo Comercial", details: detailMsg, riskLevel: "N/A", isViableIschemia: false, isRecommendedByML: false });
         }
 
-        // Aéreo Dedicado (usa distancia_km_ponta_a_ponta como distância de voo)
         const aereoDedicadoCalc = calcularTempoEstimadoViagemBackend(distancia_km_ponta_a_ponta, 2, disponibilidade_voo_dedicado_bool_feat, tempo_isquemia_max_horas);
-        if (aereoDedicadoCalc.tempoHoras !== null) {
+         if (aereoDedicadoCalc.tempoHoras !== null) {
             transportOptions.push({
                 mode: "Aereo Dedicado",
                 estimatedTimeHours: aereoDedicadoCalc.tempoHoras,
@@ -245,7 +231,7 @@ export const optimizeTransport = async (req, res) => {
                 isRecommendedByML: mlPrediction.predicted_transport_mode === "Aereo Dedicado"
             });
             if (aereoDedicadoCalc.isViableIschemia) algumaOpcaoViavelEncontrada = true;
-        } else { // Se tempoHoras for null, significa que não estava disponível
+        } else { 
             transportOptions.push({ mode: "Aereo Dedicado", details: "Indisponível.", riskLevel: "N/A", isViableIschemia: false, isRecommendedByML: false });
         }
         
@@ -272,7 +258,7 @@ export const optimizeTransport = async (req, res) => {
                     selectedTransportMode: mlPrediction.predicted_transport_mode || "N/A",
                     estimatedTimeHours: transportOptions.find(opt => opt.isRecommendedByML)?.estimatedTimeHours || 0,
                     status: "PENDING_CONFIRMATION",
-                    notes: logNotes.substring(0, 1900), // Prisma text fields can have limits
+                    notes: logNotes.substring(0, 1900),
                 },
             });
             console.log("Backend: Log de transporte salvo:", transportLogEntry);
@@ -296,10 +282,3 @@ export const optimizeTransport = async (req, res) => {
         res.status(500).json({ error: 'Erro interno no servidor durante a otimização.', details: error.message });
     }
 };
-
-// Simulação de random.uniform para JS, já que não é nativo
-function randomUniform(min, max) {
-    return Math.random() * (max - min) + min;
-}
-// Adicionar a simulação para `tempo_preparacao_ate_decolagem_comercial_backend` se você quiser usar a mesma lógica do data_generator
-// Por enquanto, usei um valor fixo no controller ou a simulação de horário_atual_simulado.
