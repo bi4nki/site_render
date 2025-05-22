@@ -1,7 +1,6 @@
 'use client';
 
-// Importar TileLayerProps se ainda não estiver
-import { MapContainer, TileLayer, CircleMarker, Popup, TileLayerProps } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'; // Removido TileLayerProps daqui por enquanto
 import 'leaflet/dist/leaflet.css';
 import L, { LatLngExpression, MapOptions } from 'leaflet';
 
@@ -12,7 +11,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
-
 
 export interface MapMarkerData {
   id: number | string;
@@ -55,15 +53,13 @@ export default function InteractiveMap({
     scrollWheelZoom: scrollWheelZoom,
   };
 
-  // Definir props para TileLayer explicitamente para ajudar o TypeScript
-  const tileLayerProps: TileLayerProps = {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-  };
-
   return (
     <MapContainer {...mapOptions} style={style}>
-      <TileLayer {...tileLayerProps} /> {/* Espalhar as props do TileLayer */}
+      <TileLayer
+        attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        // Adicionar outras props do TileLayer aqui se necessário, ex: maxZoom, minZoom
+      />
       {markers.map((marker) => (
         <CircleMarker
           key={marker.id}
