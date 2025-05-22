@@ -25,6 +25,7 @@ export default function RootLayout({
           <Link href="/">Home</Link>
           <Link href="/optimize">Otimizar Transporte</Link>
           <Link href="/donors">Doadores</Link>
+          <Link href="/receivers">Receptores</Link>
           <Link href="/hospitals">Hospitais</Link>
           <Link href="/organs">Órgãos</Link>
           <Link href="/airports">Aeroportos</Link>
