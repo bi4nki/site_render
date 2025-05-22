@@ -1,19 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // Adicionado useCallback
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { MapMarkerData } from '../components/InteractiveMap'; // Ajuste o path se 'components' estiver em outro lugar
-import L from 'leaflet'; // <--- IMPORTAÇÃO DE L PARA LatLngExpression
+import { MapMarkerData } from '../components/InteractiveMap'; 
+import L from 'leaflet'; 
 
-// Importar o mapa dinamicamente para evitar problemas de SSR
-// O componente InteractiveMap está em app/components/InteractiveMap.tsx (ou ajuste o path)
-const InteractiveMap = dynamic(() => import('../components/InteractiveMap'), { // Ajuste o path se 'components' estiver em outro lugar
+const InteractiveMap = dynamic(() => import('../components/InteractiveMap'), {
   ssr: false, 
-  loading: () => <p>Carregando mapa...</p>
+  loading: () => <div className="text-center p-4">Carregando mapa...</div>
 });
 
-// Interface para os dados do hospital como vêm do backend
 interface Hospital {
   id: number;
   name: string;
@@ -31,13 +28,14 @@ export default function HospitalsPage() {
   const [error, setError] = useState<string | null>(null);
   const [mapMarkers, setMapMarkers] = useState<MapMarkerData[]>([]);
 
-  // Agora L.LatLngExpression será reconhecido
   const initialMapCenter: L.LatLngExpression = [-15.788497, -47.879873]; 
   const initialMapZoom: number = 4;
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-  const fetchHospitals = async () => {
+  // Usar useCallback para fetchHospitals para evitar recriação desnecessária
+  // se passada como dependência para outros useEffects (não é o caso aqui, mas boa prática)
+  const fetchHospitals = useCallback(async () => {
     if (!backendUrl) {
       setError("URL do Backend não configurada.");
       setIsLoading(false); 
@@ -52,7 +50,13 @@ export default function HospitalsPage() {
       console.log("HospitalsPage: Resposta do fetch recebida, status:", response.status);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Erro desconhecido ao parsear JSON da resposta de erro."}));
+        // Tenta pegar o corpo do erro como JSON, senão como texto
+        let errorData;
+        try {
+            errorData = await response.json();
+        } catch (e) {
+            errorData = { error: await response.text() || `Erro HTTP ${response.status}` };
+        }
         console.error("HospitalsPage: Erro na resposta do backend:", response.status, errorData);
         throw new Error(errorData.error || `Erro ao buscar hospitais: ${response.status} - ${response.statusText}`);
       }
@@ -87,13 +91,13 @@ export default function HospitalsPage() {
       console.log("HospitalsPage: fetchHospitals finalizado.");
       setIsLoading(false); 
     }
-  };
+  // Adicionado backendUrl como dependência para useCallback
+  }, [backendUrl]); 
 
   useEffect(() => {
-    console.log("HospitalsPage: useEffect para fetch inicial ou mudança de backendUrl.");
+    console.log("HospitalsPage: useEffect para fetch inicial.");
     fetchHospitals();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [backendUrl]); 
+  }, [fetchHospitals]); // Agora fetchHospitals é uma dependência estável
 
   const handleDelete = async (hospitalId: number) => {
     if (!backendUrl) {
@@ -102,13 +106,19 @@ export default function HospitalsPage() {
     }
     if (confirm(`Tem certeza que deseja deletar o hospital com ID ${hospitalId}? Esta ação não pode ser desfeita.`)) {
         setError(null);
+        // Poderia adicionar um estado de loading específico para a deleção aqui
         try {
             const response = await fetch(`${backendUrl}/api/master-data/hospitals/${hospitalId}`, {
                 method: 'DELETE',
             });
             
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: "Erro ao parsear JSON da resposta de erro da deleção."}));
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    errorData = { error: await response.text() || `Erro HTTP ${response.status}` };
+                }
                 console.error("HospitalsPage: Erro ao deletar hospital:", errorData);
                 throw new Error(errorData.error || `Erro ao deletar hospital: ${response.statusText}`);
             }
@@ -117,74 +127,91 @@ export default function HospitalsPage() {
         } catch (e: any) {
             console.error("HospitalsPage: Falha ao deletar hospital (catch):", e);
             setError(e.message || "Ocorreu um erro desconhecido ao deletar o hospital.");
+        } finally {
+            // Resetar loading específico de deleção se tivesse
         }
     }
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>Lista de Hospitais</h1>
-        <Link href="/hospitals/new" style={{ padding: '10px 15px', backgroundColor: 'green', color: 'white', textDecoration: 'none', borderRadius: '5px' }}>
+    <div className="container mx-auto p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-700">Gerenciamento de Hospitais</h1>
+        <Link href="/hospitals/new" 
+              className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-sm transition duration-150 ease-in-out self-start sm:self-center focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-opacity-50">
           Adicionar Novo Hospital
         </Link>
       </div>
 
-      <div style={{ margin: '20px 0', border: '1px solid #ccc', borderRadius: '5px', overflow: 'hidden' }}>
-        <h2 style={{padding: '10px', backgroundColor: '#f9f9f9', margin:0, borderBottom: '1px solid #ccc'}}>Localização dos Hospitais</h2>
-        { typeof window !== 'undefined' && backendUrl && 
-            <InteractiveMap 
-                markers={mapMarkers} 
-                center={initialMapCenter} 
-                zoom={initialMapZoom}     
-            /> 
-        }
-        { !backendUrl && <p>Mapa indisponível: URL do backend não configurada.</p>}
+      {/* Mapa */}
+      <div className="mb-8 bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200">
+        <h2 className="text-xl font-semibold p-4 bg-gray-100 border-b border-gray-200 text-gray-700">
+            Localização dos Hospitais Cadastrados
+        </h2>
+        <div className="h-[400px] md:h-[500px] w-full"> {/* Altura definida para o mapa */}
+            { typeof window !== 'undefined' && backendUrl && 
+                <InteractiveMap 
+                    markers={mapMarkers} 
+                    center={initialMapCenter} 
+                    zoom={initialMapZoom}
+                    style={{ height: '100%', width: '100%' }} // Faz o mapa preencher o div pai
+                /> 
+            }
+            { !backendUrl && <p className="p-4 text-center text-red-600">Mapa indisponível: URL do backend não configurada.</p>}
+            { isLoading && !mapMarkers.length && <div className="h-full flex items-center justify-center text-gray-500">Carregando mapa e marcadores...</div>}
+        </div>
       </div>
 
-      {isLoading && <p>Carregando hospitais...</p>}
-      {error && <p style={{ color: 'red', fontWeight: 'bold', marginTop: '10px' }}>Erro ao carregar dados: {error}</p>}
+      {isLoading && <p className="text-center text-gray-600 py-4">Carregando lista de hospitais...</p>}
+      {error && !isLoading && <p className="text-center text-red-600 font-semibold p-3 bg-red-100 border border-red-300 rounded-md mt-4">Erro ao carregar dados: {error}</p>}
       
       {!isLoading && !error && hospitals.length === 0 && (
-        <p style={{ marginTop: '10px' }}>Nenhum hospital cadastrado.</p>
+        <p className="text-center text-gray-500 mt-4 py-4 bg-white p-6 rounded-md shadow">Nenhum hospital cadastrado.</p>
       )}
 
       {!isLoading && !error && hospitals.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #ddd', backgroundColor: '#f0f0f0' }}>
-              <th style={{ padding: '12px', textAlign: 'left' }}>ID</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Nome</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Cidade</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Estado</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Tipos de Transplante</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {hospitals.map((hospital) => (
-              <tr key={hospital.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '10px' }}>{hospital.id}</td>
-                <td style={{ padding: '10px' }}>{hospital.name}</td>
-                <td style={{ padding: '10px' }}>{hospital.city}</td>
-                <td style={{ padding: '10px' }}>{hospital.state || 'N/A'}</td>
-                <td style={{ padding: '10px' }}>
-                  {Array.isArray(hospital.transplantTypes) && hospital.transplantTypes.length > 0 
-                    ? hospital.transplantTypes.join(', ') 
-                    : 'Nenhum tipo informado'}
-                </td>
-                <td style={{ padding: '10px' }}>
-                  <button 
-                    onClick={() => handleDelete(hospital.id)} 
-                    style={{color: 'red', cursor: 'pointer', background: 'none', border: '1px solid red', padding: '5px 10px', borderRadius: '3px'}}
-                  >
-                    Deletar
-                  </button>
-                </td>
+        <div className="overflow-x-auto shadow-md rounded-lg">
+          <table className="min-w-full divide-y divide-gray-200 bg-white">
+            <thead className="bg-gray-100">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cidade</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipos de Transplante</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {hospitals.map((hospital) => (
+                <tr key={hospital.id} className="hover:bg-gray-50 transition-colors duration-150">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{hospital.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 max-w-xs truncate" title={hospital.name}>{hospital.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{hospital.city}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{hospital.state || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={Array.isArray(hospital.transplantTypes) && hospital.transplantTypes.length > 0 ? hospital.transplantTypes.join(', ') : 'Nenhum tipo informado'}>
+                    {Array.isArray(hospital.transplantTypes) && hospital.transplantTypes.length > 0 
+                      ? hospital.transplantTypes.join(', ') 
+                      : 'Nenhum tipo informado'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {/* Link para Edição (a ser implementado)
+                    <Link href={`/hospitals/edit/${hospital.id}`} className="text-indigo-600 hover:text-indigo-900 mr-4 transition duration-150 ease-in-out">
+                        Editar
+                    </Link>
+                    */}
+                    <button 
+                      onClick={() => handleDelete(hospital.id)} 
+                      className="text-red-500 hover:text-red-700 transition duration-150 ease-in-out font-semibold focus:outline-none"
+                    >
+                      Deletar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
