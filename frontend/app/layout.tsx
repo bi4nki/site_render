@@ -24,6 +24,7 @@ export default function RootLayout({
           <Link href="/">Home</Link>
           <Link href="/optimize">Otimizar Transporte</Link>
           <Link href="/hospitals">Hospitais</Link>
+          <Link href="/organs">Órgãos</Link>
           {/* Adicionar outros links aqui (Órgãos, Doadores, Receptores) quando criar as páginas */}
         </nav>
         <main style={{ padding: '0 20px', flexGrow: 1 }}> {/* Adicionado flexGrow para main ocupar espaço */}
