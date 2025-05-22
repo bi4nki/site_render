@@ -13,8 +13,8 @@ datasource db {
 // --- Modelos de Dados Mestres ---
 model Organ {
   id               Int      @id @default(autoincrement())
-  name             String   @unique // e.g., RIM, CORACAO, FIGADO
-  maxIschemiaHours Int // Tempo máximo em horas que o órgão pode ficar fora do corpo
+  name             String   @unique 
+  maxIschemiaHours Int 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -30,7 +30,7 @@ model Hospital {
   state           String
   latitude        Float
   longitude       Float
-  transplantTypes String[] // Lista de nomes de órgãos que este hospital pode transplantar
+  transplantTypes String[] 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -80,16 +80,12 @@ model Receiver {
   organNeeded   Organ    @relation("ReceiverOrganNeeded", fields: [organNeededId], references: [id])
 }
 
-
-// --- Modelo para Otimização de Transporte (Exemplo) ---
-// Este modelo pode ser mais complexo, dependendo do que você quer armazenar
-// sobre as decisões de transporte.
 model TransportLog {
   id                      Int      @id @default(autoincrement())
   donorId                 Int
   receiverId              Int
-  // donor                 Donor    @relation(fields: [donorId], references: [id]) // Se precisar linkar
-  // receiver              Receiver @relation(fields: [receiverId], references: [id]) // Se precisar linkar
+  // donor                 Donor    @relation(fields: [donorId], references: [id]) 
+  // receiver              Receiver @relation(fields: [receiverId], references: [id])
   
   selectedTransportMode String   // e.g., "Aereo Comercial", "Aereo Dedicado", "Terrestre"
   estimatedTimeHours    Float
