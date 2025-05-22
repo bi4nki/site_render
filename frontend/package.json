@@ -9,13 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "14.2.3", // Use a versão mais recente estável
+    "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18"
   },
   "devDependencies": {
     "eslint": "^8",
     "eslint-config-next": "14.2.3"
-    // Adicione "typescript", "@types/react", "@types/node" se usar TypeScript
   }
 }
