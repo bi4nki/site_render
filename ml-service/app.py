@@ -78,14 +78,14 @@ def health_check():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    print("LOG PREDICT: >>> Rota /predict ACIONADA <<<") # Log bem no início
+    print("LOG PREDICT: >>> Rota /predict ACIONADA <<<")
     predict_start_time = time.time()
 
-    # A checagem de model e scaler está comentada para este teste específico
-    # if not model or not scaler:
-    #     error_msg = model_load_error or "Modelo ou scaler não está carregado."
-    #     print(f"LOG PREDICT: Tentativa de predição falhou - {error_msg}")
-    #     return jsonify({"error": error_msg + " Verifique os logs de inicialização do servidor."}), 500
+    # Checagem de modelo e scaler (agora podemos verificar, pois vamos usar o scaler)
+    if not model or not scaler: # DESCOMENTADO
+        error_msg = model_load_error or "Modelo ou scaler não está carregado."
+        print(f"LOG PREDICT: Tentativa de predição falhou - {error_msg}")
+        return jsonify({"error": error_msg + " Verifique os logs de inicialização do servidor."}), 500
 
     try:
         data = request.get_json()
@@ -102,29 +102,32 @@ def predict():
         
         print(f"LOG PREDICT: Features recebidas da lista: {features_list}")
 
-        # ---- SEÇÃO DO MODELO E SCALER TEMPORARIAMENTE COMENTADA PARA TESTE ----
-        # if len(features_list) != len(EXPECTED_FEATURE_NAMES):
-        #     print(f"LOG PREDICT: Número incorreto de features. Esperado {len(EXPECTED_FEATURE_NAMES)}, recebido {len(features_list)}")
-        #     return jsonify({"error": f"Número incorreto de features. Esperado {len(EXPECTED_FEATURE_NAMES)}, recebido {len(features_list)}"}), 400
+        # ---- REABILITANDO O SCALER ----
+        if len(features_list) != len(EXPECTED_FEATURE_NAMES): # DESCOMENTADO
+            print(f"LOG PREDICT: Número incorreto de features. Esperado {len(EXPECTED_FEATURE_NAMES)}, recebido {len(features_list)}")
+            return jsonify({"error": f"Número incorreto de features. Esperado {len(EXPECTED_FEATURE_NAMES)}, recebido {len(features_list)}"}), 400
 
-        # preprocess_start_time = time.time()
-        # try:
-        #     features_list_float = [float(f) for f in features_list]
-        #     input_df = pd.DataFrame([features_list_float], columns=EXPECTED_FEATURE_NAMES)
-        #     scaled_features_np = scaler.transform(input_df) 
-        # except ValueError as ve:
-        #     print(f"LOG PREDICT: Erro de valor durante a conversão/preparação dos dados: {ve}")
-        #     return jsonify({"error": f"Erro ao converter features para números ou preparar dados: {str(ve)}"}), 400
-        # except Exception as e_scale:
-        #     print(f"LOG PREDICT: Erro no scaling ou preparação dos dados: {e_scale}")
-        #     return jsonify({"error": f"Erro ao aplicar o scaler ou preparar dados: {str(e_scale)}"}), 400
+        preprocess_start_time = time.time()
+        scaled_features_np_for_dummy_response = None # Para usar na resposta dummy
+        try:
+            features_list_float = [float(f) for f in features_list]
+            input_df = pd.DataFrame([features_list_float], columns=EXPECTED_FEATURE_NAMES)
+            scaled_features_np = scaler.transform(input_df) 
+            scaled_features_np_for_dummy_response = scaled_features_np # Salva para a resposta
+        except ValueError as ve:
+            print(f"LOG PREDICT: Erro de valor durante a conversão/preparação dos dados: {ve}")
+            return jsonify({"error": f"Erro ao converter features para números ou preparar dados: {str(ve)}"}), 400
+        except Exception as e_scale:
+            print(f"LOG PREDICT: Erro no scaling ou preparação dos dados: {e_scale}")
+            return jsonify({"error": f"Erro ao aplicar o scaler ou preparar dados: {str(e_scale)}"}), 400
         
-        # preprocess_time = time.time() - preprocess_start_time
-        # print(f"LOG PREDICT: Features escaladas (formato NumPy): {scaled_features_np}")
-        # print(f"LOG PREDICT: Tipo de scaled_features_np: {type(scaled_features_np)}")
-        # print(f"LOG PREDICT: Shape de scaled_features_np: {scaled_features_np.shape}")
-        # print(f"LOG PREDICT: Tempo de pré-processamento: {preprocess_time:.4f}s")
+        preprocess_time = time.time() - preprocess_start_time
+        print(f"LOG PREDICT: Features escaladas (formato NumPy): {scaled_features_np}")
+        print(f"LOG PREDICT: Tipo de scaled_features_np: {type(scaled_features_np)}")
+        print(f"LOG PREDICT: Shape de scaled_features_np: {scaled_features_np.shape}")
+        print(f"LOG PREDICT: Tempo de pré-processamento: {preprocess_time:.4f}s")
 
+        # ---- MODEL.PREDICT() AINDA COMENTADO ----
         # model_predict_start_time = time.time()
         # try:
         #     prediction_probabilities = model.predict(scaled_features_np)
@@ -144,24 +147,27 @@ def predict():
         #     predicted_transport_mode = "Classe Desconhecida"
         #     print(f"LOG PREDICT: Índice de classe previsto ({predicted_class_index}) fora do alcance de CLASS_NAMES.")
         # -------------------------------------------------------------
-
-        # Resposta Dummy para este teste
-        predicted_transport_mode_dummy = "TESTE - MODELO DESABILITADO"
-        predicted_class_index_dummy = -1
-        prediction_probabilities_dummy = []
         
+        # Resposta Dummy para este teste (com dados escalados)
+        predicted_transport_mode_dummy = "TESTE - SCALER HABILITADO, MODELO DESABILITADO"
+        predicted_class_index_dummy = -2 # Valor diferente para identificar este teste
+        # Usa os dados escalados na resposta para confirmar que o scaler funcionou
+        scaled_features_list_for_response = []
+        if scaled_features_np_for_dummy_response is not None:
+            scaled_features_list_for_response = scaled_features_np_for_dummy_response.tolist()[0]
+
         total_predict_time = time.time() - predict_start_time
-        print(f"LOG PREDICT: Tempo total da requisição /predict (modelo desabilitado): {total_predict_time:.4f}s")
+        print(f"LOG PREDICT: Tempo total da requisição /predict (scaler habilitado, modelo desabilitado): {total_predict_time:.4f}s")
 
         return jsonify({
-            "message": "Teste da rota /predict com modelo desabilitado bem-sucedido!",
-            "received_features": features_list, # Retorna as features recebidas para confirmação
+            "message": "Teste da rota /predict com scaler habilitado e modelo desabilitado bem-sucedido!",
+            "received_features": features_list,
+            "scaled_features_for_model_dummy": scaled_features_list_for_response, 
             "predicted_transport_mode": predicted_transport_mode_dummy,
-            "predicted_class_index": int(predicted_class_index_dummy),
-            "probabilities": prediction_probabilities_dummy
+            "predicted_class_index": int(predicted_class_index_dummy)
         })
 
-    except Exception as e: # Captura exceções que podem ocorrer antes da lógica do modelo
+    except Exception as e:
         print(f"LOG PREDICT: Erro inesperado GERAL na rota /predict: {e}")
         return jsonify({"error": f"Erro interno inesperado no servidor (geral)."}), 500
 
