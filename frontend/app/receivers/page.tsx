@@ -113,16 +113,36 @@ export default function ReceiversPage() {
         </div>
       )}
 
-      {!isLoading && !error && receivers.length > 0 && (
+       {!isLoading && !error && receivers.length > 0 && (
         <div className="overflow-x-auto shadow-xl rounded-xl border border-slate-200 bg-white">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-100">
+              {/* O <tr> do cabeçalho define as colunas */}
               <tr>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tipo Sanguíneo</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center"><ShieldAlert className="h-4 w-4 mr-1 text-slate-400"/>Urgência</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center"><HospitalIcon className="h-4 w-4 mr-1 text-slate-400"/>Hospital</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center"><OrganIcon className="h-4 w-4 mr-1 text-slate-400"/>Órgão Necessário</th>
+                
+                {/* Cabeçalho para Urgência */}
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <div className="flex items-center"> {/* Flex para alinhar ícone e texto */}
+                    <ShieldAlert className="h-4 w-4 mr-1.5 text-slate-400"/> Urgência
+                  </div>
+                </th>
+                
+                {/* Cabeçalho para Hospital */}
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <div className="flex items-center"> {/* Flex para alinhar ícone e texto */}
+                    <HospitalIcon className="h-4 w-4 mr-1.5 text-slate-400"/> Hospital
+                  </div>
+                </th>
+                
+                {/* Cabeçalho para Órgão Necessário */}
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <div className="flex items-center"> {/* Flex para alinhar ícone e texto */}
+                    <OrganIcon className="h-4 w-4 mr-1.5 text-slate-400"/> Órgão Necessário
+                  </div>
+                </th>
+                
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data Inscrição</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ações</th>
               </tr>
@@ -138,8 +158,7 @@ export default function ReceiversPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     {new Date(receiver.registrationDate).toLocaleDateString('pt-BR')}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
-                    {}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button 
                       onClick={() => handleDelete(receiver.id)} 
                       className="text-red-500 hover:text-red-700 transition duration-150 ease-in-out font-semibold focus:outline-none hover:underline flex items-center"
