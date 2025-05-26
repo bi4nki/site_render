@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { UserPlus, Trash2, Edit3, Hospital as HospitalIcon, Activity as OrganIcon, ShieldAlert } from 'lucide-react'; 
+import { 
+    UserPlus, 
+    Trash2, 
+    Edit3, 
+    Building as HospitalIcon,      
+    ActivitySquare as OrganIcon,
+    ShieldAlert 
+} from 'lucide-react';
 
 interface HospitalSimple { 
   id: number; 
@@ -16,8 +23,8 @@ interface Receiver {
   id: number;
   bloodType: string;
   urgencyLevel: number;
-  registrationDate: string;
-  hospital: HospitalSimple;  
+  registrationDate: string; 
+  hospital: HospitalSimple;   
   organNeeded: OrganSimple; 
   createdAt?: string; 
 }
@@ -76,6 +83,7 @@ export default function ReceiversPage() {
             fetchReceivers(); 
         } catch(e:any) { 
             setError(e.message || "Ocorreu um erro desconhecido ao deletar o receptor."); 
+        } finally {
         }
     }
   };
@@ -83,7 +91,7 @@ export default function ReceiversPage() {
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8 bg-slate-50 min-h-screen">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 pb-4 border-b border-slate-300">
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-700 mb-4 sm:mb-0">
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-700 mb-4 sm:mb-0 tracking-tight">
           Gerenciamento de Receptores
         </h1>
         <Link href="/receivers/new" 
@@ -115,7 +123,7 @@ export default function ReceiversPage() {
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center"><ShieldAlert className="h-4 w-4 mr-1 text-slate-400"/>Urgência</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center"><HospitalIcon className="h-4 w-4 mr-1 text-slate-400"/>Hospital</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center"><OrganIcon className="h-4 w-4 mr-1 text-slate-400"/>Órgão Necessário</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data de Inscrição</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data Inscrição</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
