@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown } from 'lucide-react'; // Ícone para os selects
+import { ChevronDown } from 'lucide-react'; 
 
-// Interfaces para os dados dos dropdowns
 interface HospitalOption {
   id: number;
   name: string;
@@ -15,17 +14,17 @@ interface OrganOption {
   name: string;
 }
 
-// Interface para os dados do formulário
+
 export interface ReceiverFormData {
   bloodType: string;
-  urgencyLevel: string; // Input é string, converter para número
-  hospitalId: string;   // Mantido como string para o valor do <select>
-  organNeededId: string;// Mantido como string para o valor do <select>
-  registrationDate?: string; // Formato ISO YYYY-MM-DDTHH:mm
+  urgencyLevel: string; 
+  hospitalId: string;   
+  organNeededId: string;
+  registrationDate?: string; 
 }
 
 interface ReceiverFormProps {
-  initialData?: Partial<ReceiverFormData & { id?: number }>; // Para edição futura
+  initialData?: Partial<ReceiverFormData & { id?: number }>; 
   onSubmit: (data: ReceiverFormData) => Promise<void>;
   isSubmitting: boolean;
   submitButtonText?: string;
@@ -41,7 +40,7 @@ export default function ReceiverForm({
 }: ReceiverFormProps) {
   const [formData, setFormData] = useState<ReceiverFormData>({
     bloodType: initialData?.bloodType || '',
-    urgencyLevel: initialData?.urgencyLevel || '3', // Default para urgência média
+    urgencyLevel: initialData?.urgencyLevel || '3', 
     hospitalId: initialData?.hospitalId || '',
     organNeededId: initialData?.organNeededId || '',
     registrationDate: initialData?.registrationDate || new Date().toISOString().substring(0, 16),
@@ -207,16 +206,6 @@ export default function ReceiverForm({
           {isSubmitting ? 'Salvando...' : submitButtonText}
         </button>
       </div>
-    </Entendido! Vamos criar o CRUD completo para Receptores no frontend, seguindo o mesmo padrão e estilo Tailwind CSS que usamos para Doadores.
-
----
-**1. Componente: `frontend/app/components/ReceiverForm.tsx`**
----
-Este formulário será usado para criar (e futuramente editar) receptores. Ele também buscará a lista de hospitais e órgãos.
-
-```typescript jsx
-'use client';
-
-import { useState, useEffect,form>
+    </form>
   );
 }
