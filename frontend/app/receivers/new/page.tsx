@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ReceiverForm, { ReceiverFormData } from '../../components/ReceiverForm';
+import ReceiverForm, { ReceiverFormData } from '../../components/ReceiverForm'; 
+import Link from 'next/link';
 
 export default function NewReceiverPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +25,8 @@ export default function NewReceiverPage() {
       urgencyLevel: parseInt(formData.urgencyLevel, 10),
       hospitalId: parseInt(formData.hospitalId, 10),
       organNeededId: parseInt(formData.organNeededId, 10),
-      ...(formData.registrationDate && { registrationDate: new Date(formData.registrationDate).toISOString() })
+      ...(formData.registrationDate && !isNaN(new Date(formData.registrationDate).getTime()) && 
+        { registrationDate: new Date(formData.registrationDate).toISOString() })
     };
 
     try {
@@ -34,9 +36,9 @@ export default function NewReceiverPage() {
         body: JSON.stringify(dataToSubmit),
       });
 
+      const responseData = await response.json();
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Erro ao criar receptor: ${response.statusText}`);
+        throw new Error(responseData.error || responseData.message || `Erro ao criar receptor: ${response.statusText}`);
       }
       alert("Receptor criado com sucesso!");
       router.push('/receivers'); 
@@ -49,14 +51,24 @@ export default function NewReceiverPage() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Adicionar Novo Receptor</h1>
-      {error && <p style={{ color: 'red', fontWeight: 'bold' }}>Erro: {error}</p>}
-      <ReceiverForm 
-        onSubmit={handleCreateReceiver} 
-        isSubmitting={isSubmitting}
-        submitButtonText="Criar Receptor"
-      />
+    <div className="container mx-auto p-4 sm:p-6 md:p-8">
+      <div className="max-w-2xl mx-auto">
+         <div className="flex justify-between items-center mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-700">
+            Adicionar Novo Receptor
+            </h1>
+            <Link href="/receivers" className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                ← Voltar para Lista de Receptores
+            </Link>
+        </div>
+        
+        <ReceiverForm 
+          onSubmit={handleCreateReceiver} 
+          isSubmitting={isSubmitting}
+          submitButtonText="Criar Receptor"
+          formError={error}
+        />
+      </div>
     </div>
   );
 }
